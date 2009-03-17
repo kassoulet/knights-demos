@@ -2,7 +2,7 @@
 
   MindLink
 
-  Coded by Gautier "Impulse" PORTET <kassoulet gmail.com>
+  Coded by Gautier "Impulse" PORTET
 
   09/97 - 12/97
 
@@ -12,36 +12,48 @@
   ugly design
   buggy module player
   but here is it: win32/linux versions
-
   
+  2009 !
 */
 
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
-//#define ALLEGRO_DIGI_H
-
-#include "SDL.h"
+#include <SDL.h>
 
 #include <allegro.h>
 #include "data.h"
 
+#undef SAMPLE
+
+int SCREEN_WIDTH = 1680;
+int SCREEN_HEIGHT= 1050;
+
+//void * module_data;
+//int module_size;
+
+extern int MusicGetPosition(void);
+extern void MusicStart(char *filename);
+extern void MusicStop();
+extern int MusicUpdate();
+extern void MusicSetPosition(int position);
+
+int GetPosition(void)
+{
+  if(key[KEY_ESC])
+	  return 0xffff;
+  return MusicGetPosition();
+}
+        
+
+unsigned short *TunnelLookup;
+unsigned short *TunnelLookup2;
+unsigned short *PlasmaLookup;
+unsigned short *PlasmaLookup2;
 
 
-
-void MusicUpdate();
-void OpenMusic(char* filename);
-void CloseMusic();
-int GetPosition(void);
-
-
-unsigned short TunnelLookup[320*200];
-unsigned short TunnelLookup2[320*200];
-unsigned short PlasmaLookup[320*200];
-unsigned short PlasmaLookup2[320*200];
-
-unsigned char _image[320*200];
+unsigned char *_image;
 unsigned char _map[256*256];
 
 BITMAP * buffer;
@@ -52,7 +64,123 @@ int mode=GFX_AUTODETECT_WINDOWED;
 //int iVBLframe,VBLdelta,__old;
 int count;
 
-volatile int VBLframe;
+/*void WaitVBL__()
+{
+	static int yop=0;
+	RGB color;
+
+  if(key[KEY_TILDE])
+  {
+    color.r = 40;
+    set_color(0, &color);
+    vsync();
+    color.r = color.g = color.b = 0;
+    set_color(0, &color);
+  }
+  vsync();
+  //MusicUpdate();
+  VBLframe = retrace_count;
+  rest(10);
+}*/
+
+int VBLframe=0,VBLfps=100,VBLcount=0,VBLold=0;
+int VBLdelta=0;
+double fVBLdelta=0;
+int refreshRate;
+int finalScrollPosition;
+
+int TimerHandler(void)
+{
+  VBLfps = VBLcount;
+  VBLcount = 0;
+  //printf("fps: %d\n", VBLfps);
+  return 1;
+}
+
+int TimerHandler2(void)
+{
+  VBLframe++;
+  return 1;
+}
+static Uint32 fps_count=0;
+static Uint32 fps_frames=0;
+Uint32 ticks=0;
+double delta;
+Uint32 frames=0;
+double timer=0;
+double oldTicks=0;
+double fps;
+
+static void UpdateTimer()
+{
+	Uint32 diff;
+	ticks = SDL_GetTicks();
+	diff = (ticks-oldTicks);
+	
+	fps_count += diff;
+	fps_frames++;
+	if (fps_count > 1000)
+	{
+		fps = fps_frames * fps_count / 1000.0;
+		fps_count = fps_frames = 0;
+	}
+	
+	/* we interpolate delta to get a smooth movement */
+	delta = delta*0.5 + (diff/20.0)*0.5;
+	
+	frames++;
+	VBLcount++;
+	timer+=delta;
+	
+	VBLframe = timer;
+	VBLdelta = delta;
+	fVBLdelta= delta;	
+	oldTicks = ticks;
+}
+
+void WaitVBL()
+{
+  UpdateTimer();
+
+  if(key[KEY_SPACE])
+  {
+    BITMAP * display;
+    char buf[16];
+    int i,j;
+    
+    if (key[KEY_P])
+    {
+      //
+      // save_bitmap("dump.tga", buffer, pal);
+    }
+
+    display = create_bitmap(8*16, 10);
+    clear_to_color(display, 0);
+
+    buf[0] = 0;
+    if ( fps > 10000 || fps < 0) {
+      strcpy(buf, "error");
+    } else {
+      sprintf(buf, "%.2f FPS", fps);
+    }
+    i = 8*16*2*fps/70;
+    if(i >= 8*16-1)
+      i = 8*16-2;
+    drawing_mode(DRAW_MODE_SOLID, NULL, 0, 0);
+
+    for (j=1;j<=i;j++) {
+      vline(display, j, 0, 8, 63);
+	}
+
+    text_mode(-1);
+    textout(display, font, buf, 1, 1, makecol(250,250,250));
+
+    blit(display, buffer, 0, 0, 0, 0, 8*16, 9);
+
+    destroy_bitmap(display);
+
+  }
+}
 
 PALETTE *palWater;
 COLOR_MAP *tableWater,*tableGlenz;
@@ -155,7 +283,8 @@ typedef struct K3DTWorld
   struct K3DTPlace place;
 } K3DTWorld;
 
-unsigned char faceOrder[256],faceDepth[256];
+#define MAX_FACES 1024
+unsigned char faceOrder[MAX_FACES],faceDepth[MAX_FACES];
 
 
 void K3DInit(void)
@@ -225,7 +354,7 @@ int K3DLoadObjectASC(char * file, struct K3DTObject * obj)
   FILE * f;
   int i,fin;
   char line[250],temp[255];
-  long   faces,vertexes;
+  int faces,vertexes;
   
   line[0] = 0;
   f = fopen(file, "rb");
@@ -301,7 +430,7 @@ int K3DLoadObjectASC(char * file, struct K3DTObject * obj)
   
   if(i != vertexes)
   {
-    printf("Error while parsing vertexes (%d found,%ld expexted)", i, vertexes);
+    printf("Error while parsing vertexes (%d found,%d expexted)", i, vertexes);
     exit(1);
   }
   
@@ -333,6 +462,10 @@ int K3DLoadObjectASC(char * file, struct K3DTObject * obj)
     
   }
   
+  if (faces >= MAX_FACES) {
+    printf("error: please raise MAX_FACES to %d\n", faces);
+    exit(1);
+  }
   obj->vertexes = vertexes;
   obj->faces = faces;
   
@@ -541,105 +674,20 @@ void K3DRenderObject(BITMAP * buffer, struct K3DTObject *obj)
 
 void DrawObject(struct K3DTObject *obj);
 
-int frames=0;
-int counter=0;
-int music_counter=0;
-
-Uint32 my_timer_handler(Uint32 interval, void *param)
-{
-  VBLframe++;
-  
-  counter += 1000/70;
-  if (counter >= 1000) {
-    printf("fps:%d, #%d\n", 1000*frames/counter, VBLframe);
-    counter = 0;
-    frames = 0;
-  }
-  
-  /*music_counter += 1000/70;
-  if (music_counter > 10) {
-    MusicUpdate();
-    music_counter = 0;
-  }*/
-
-  //printf("timer\n");
-  return interval;
-}
-END_OF_FUNCTION(my_timer_handler);
-
-void music_timer_handler()
-{
-  MusicUpdate();
-}
-END_OF_FUNCTION(music_timer_handler);
-
-void WaitVBL()
-{
-  static int yop=0;
-  RGB color;
-  /*
-  float delta,diff;
-  
-  delta = fVBLframe- (float)retrace_count;
-  fVBLframe += delta / 10.0f;
-  */
-  if(key[KEY_TILDE])
-  {
-    color.r = 40;
-    set_color(0, &color);
-    vsync();
-    color.r = color.g = color.b = 0;
-    set_color(0, &color);
-  }
-
-  
-  frames ++;
-  rest(0);
-  SDL_Delay(10);
-
-  //MusicUpdate();
-  
-
-  
-  /*static int now=0;
-  while (VBLframe <= now) {
-    //rest(10);
-    //VBLframe = retrace_count;
-    //printf("  %d\n", VBLframe);
-  }
-  now = VBLframe;
-  
-  printf("%d\n", VBLframe);*/
-  
-   //VBLframe ++;
-  //rest(1000/70);
-//    VBLframe = yop++;
-  }
-
-void MIDASerror(void)
-{
-    exit(EXIT_FAILURE);
-}
-
-/*
-void MIDAS_CALL prevr(void)
-{
-  VBLframe++;
-}
-*/
 
 
 
+float SCALE_X, SCALE_Y;
 
 void Load(void)
 {
   void draw_bar(int pos)
   {
-    rectfill(screen, 192+128+16*(pos/32), 270, 14+192+128+16*(pos/32), 286, 32);
+		//rectfill(screen, 192+128+16*(pos/32), 270, 14+192+128+16*(pos/32), 286, 32);
   }
   
-
-  RGB color;
+  
+  RGB color; 
   register int i,x,y;
   
   PALETTE pal;
@@ -649,11 +697,15 @@ void Load(void)
   BITMAP *menu = data[BMP_winMenu].dat;//load_bitmap("gfx/win.bmp", pal);
   //  pal          = data[PAL_winMenu].dat;
   memcpy(pal, data[PAL_winMenu].dat, sizeof(pal));
+
+  set_gfx_mode(mode, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0);
   
+  SCALE_X = SCREEN_W/320.0;
+  SCALE_Y = SCREEN_H/200.0;
   
-  set_gfx_mode(mode, 640, 480, 0, 0);
-  buffer = create_bitmap(SCREEN_W, SCREEN_H);
-    
+  /*
+  set_gfx_mode(mode, 1024, 768, 0, 0);
+  
   for(x = 0;x < 330;x++)
     for(y = 0;y < 36;y++)
     putpixel(menu, x, y, getpixel(menu, x, y)+64);
@@ -674,7 +726,7 @@ void Load(void)
     set_color(i, &color);
   }
   
-  vsync();
+  //vsync();
   
   for(x = 0;x < 640;x++)
     for(y = 0;y < 480;y++)
@@ -682,68 +734,71 @@ void Load(void)
     i = (i+(rand()>>29)+((y*2)/15))/2;
     if(i < 1) i = 1;
     if(i > 63) i = 63;
-    _putpixel(buffer, x, y, i);
+    _putpixel(screen, x, y, i);
   }
-
-  vsync();
+  //vsync();
   for(i = 0;i < 64;i++)
   {
     pal[i].r = pal[i].g = 0;
     pal[i].b = 64-i;
   }
   
-  rectfill(buffer, 154, 169, 484, 309, 64+7);
-  blit(menu, buffer, 1, 1, 154, 169, 330, 36);
-  line(buffer, 154, 169, 154, 309, 64+15);
-  line(buffer, 484, 309, 154, 309, 64+8);
-  line(buffer, 484, 169, 484, 309, 64+8);
+  rectfill(screen, 154, 169, 484, 309, 64+7);
+  blit(menu, screen, 1, 1, 154, 169, 330, 36);
+  line(screen, 154, 169, 154, 309, 64+15);
+  line(screen, 484, 309, 154, 309, 64+8);
+  line(screen, 484, 169, 484, 309, 64+8);
   
-  line(buffer, 190, 268, 190, 288, 64+8);
-  line(buffer, 190, 268, 449, 268, 64+8);
-  line(buffer, 449, 268, 449, 288, 64+15);
-  line(buffer, 190, 288, 449, 288, 64+15);
+  line(screen, 190, 268, 190, 288, 64+8);
+  line(screen, 190, 268, 449, 268, 64+8);
+  line(screen, 449, 268, 449, 288, 64+15);
+  line(screen, 190, 288, 449, 288, 64+15);
   text_mode(-1);
-  textout_centre(buffer, font, "MindLink 1.0", 321, 215, 64+0);
-  textout_centre(buffer, font, "Building", 321, 240, 64+0);
+  textout_centre(screen, font, "MindLink 1.0", 321, 215, 64+0);
+  textout_centre(screen, font, "Building", 321, 240, 64+0);
   
-  draw_sprite(buffer, titre, 1, 1);
+  draw_sprite(screen, titre, 1, 1);
   set_palette(pal);
-  vsync();
-  blit(buffer,screen,0,0,0,0,SCREEN_W,SCREEN_H);
+  //vsync();*/
   
-  for(x = 0;x < 320;x++)
+  TunnelLookup = malloc(SCREEN_W*SCREEN_H*sizeof(short));
+  TunnelLookup2 = malloc(SCREEN_W*SCREEN_H*sizeof(short));
+  PlasmaLookup = malloc(SCREEN_W*SCREEN_H*sizeof(short));
+  PlasmaLookup2 = malloc(SCREEN_W*SCREEN_H*sizeof(short));
+  _image = malloc(SCREEN_W*SCREEN_H*sizeof(short));  
+  for(x = 0;x < SCREEN_W;x++)
   {
     if(x%20) {
-      rectfill(buffer, 192+16*(x/40), 270, 14+192+16*(x/40), 286, 32);
-      blit(buffer,screen,0,0,0,0,SCREEN_W,SCREEN_H);
+      //rectfill(screen, 192+16*(x/40), 270, 14+192+16*(x/40), 286, 32);
     }
-    
-    for(y = 0;y < 200;y++)
+	//rest(1);
+	
+    for(y = 0;y < SCREEN_H;y++)
     {
       fixed n,m;
       
-      if((y-100) != 0)
-        TunnelLookup[320*y+x] = (
-          /*(random()%2)+*/fixtoi(fatan(fdiv(itofix(x-160), itofix(y-100)))))<<9;
+      if((y-SCREEN_H/2) != 0)
+        TunnelLookup[SCREEN_W*y+x] = (
+          fixtoi(fatan(fdiv(itofix(x-SCREEN_W/2), itofix(y-SCREEN_H/2)))))<<9;
       else
-        TunnelLookup[320*y+x] = (128)<<8;
+        TunnelLookup[SCREEN_W*y+x] = (128)<<8;
       
-      PlasmaLookup[320*y+x] = TunnelLookup[320*y+x];
+      PlasmaLookup[SCREEN_W*y+x] = TunnelLookup[SCREEN_W*y+x];
       
       //         TunnelLookup[320*y+x] += x;
-      n = itofix(x-160);
-      m = itofix(y-100);
+      n = itofix(x-SCREEN_W/2);
+      m = itofix(y-SCREEN_H/2);
 
-      PlasmaLookup2[320*y+x] = TunnelLookup2[320*y+x] = TunnelLookup[320*y+x]/256;
+      PlasmaLookup2[SCREEN_W*y+x] = TunnelLookup2[SCREEN_W*y+x] = TunnelLookup[SCREEN_W*y+x]/256;
 
-      if(sqrt((int)(x-160)*(x-160)+(y-100)*(y-100)) != 0)
+      if(sqrt((int)(x-SCREEN_W/2)*(x-SCREEN_W/2)+(y-SCREEN_H/2)*(y-SCREEN_H/2)) != 0)
       {
-        TunnelLookup[320*y+x] += (4096)/(int)sqrt((x-160)*(x-160)+(y-100)*(y-100));
-        //+ (random()%2);
-        PlasmaLookup[320*y+x] += (int)sqrt((x-160)*(x-160)+(y-100)*(y-100));
-        TunnelLookup2[320*y+x]+= 256*TunnelLookup[320*y+x];
-        PlasmaLookup2[320*y+x]+= 256*PlasmaLookup[320*y+x];
-        //+ (random()%2);
+        TunnelLookup[SCREEN_W*y+x] += (SCALE_X*4096)/(int)sqrt((x-SCREEN_W/2)*(x-SCREEN_W/2)+(y-SCREEN_H/2)*(y-SCREEN_H/2));
+
+        PlasmaLookup[SCREEN_W*y+x] += (int)sqrt((x-SCREEN_W/2)*(x-SCREEN_W/2)+(y-SCREEN_H/2)*(y-SCREEN_H/2));
+        TunnelLookup2[SCREEN_W*y+x]+= 256*TunnelLookup[SCREEN_W*y+x];
+        PlasmaLookup2[SCREEN_W*y+x]+= 256*PlasmaLookup[SCREEN_W*y+x];
+
       }
 
     }
@@ -786,9 +841,7 @@ void Load(void)
       c = 255;
     *((unsigned char*)tableGlenz+i) = c;
   }
-  //  while(!key[KEY_ESC])
-  //  {}
-  
+
 }
 
 // not used: not working :)
@@ -968,52 +1021,21 @@ static void DrawGlenzTunnel(BITMAP* buffer, unsigned short* lookup, BITMAP* map,
   // offset in map
   offset = x*256+y;
   
-  for(i = 0;i < 320*200;i++)
+  for(i = 0;i < SCREEN_W*SCREEN_H; i++)
   {
-    unsigned char pixel;
-    unsigned short address;
-    unsigned char save;
-    unsigned int def;
-    address = lookup[i];
-    save = address>>8;
-    address+=offset;
-    def=deform->table[save];
-    address+=def;
-    pixel = *(_map+(address&0xffff));
-  *(char*)(buffer->dat+i) = *pPicture++ + pixel;
+  	unsigned char pixel;
+  	unsigned short address;
+  	unsigned char save;
+  	unsigned int def;
+  	address = lookup[i];
+  	save = address>>8;
+  	address+=offset;
+  	def=deform->table[save];
+  	address+=def;
+  	pixel = *(_map+(address&0xffff));
+	*(char*)(buffer->dat+i) = *pPicture++ + pixel;
   }
-  
-  // draw the tunnel on the buffer
-//    *(char*)(buffer->dat+i) = *pPicture++ + *(_map+((lookup[i]+deform->table[lookup[i]&255]+offset)&0xffff));
-//    pixel =  *(_map+(((lookup[i]&0xff00)+deform->table[lookup[i]&0xff]+offset)&0xffff))
-  /*
-  asm volatile ("
-    pushl %%ebp
-    movl %%ecx,%%ebp
-    movl $320*200/1,%%ecx
-    glenz_tunnel_loop:
-    xorl %%ebx,%%ebx
-    movl (%%edx,%%ecx,2),%%eax // lookup
-    movb %%ah,%%bl    // *** // sauve lookup haut
-    addl %%ebp,%%eax // add offset
-    movl (%%esi,%%ebx,4),%%ebx // charge 4o de deform
-    addl %%ebx,%%eax // on ajoute a lookup+offset
-    andl $0xffff,%%eax
-    movb __map(%%eax),%%al
-    movb __image(%%ecx),%%bl
-    //        movb $64,%%bl
-    addb %%bl,%%al
-    movb %%al,(%%edi,%%ecx)
-    
-    decl %%ecx
-    jns  glenz_tunnel_loop
-    popl %%ebp
-    "
-    :
-  : "c" (offset),"D" (buffer->dat), "S" (&deform->table), "d" (lookup)
-    : "eax","ebx","ecx","edx","esi","edi"
-    );
-  */
+
 }
 
 void PartTunnel(void)
@@ -1028,8 +1050,9 @@ void PartTunnel(void)
   set_palette(data[PAL_glenz1].dat);
   
   // Init global buffers
-  for(i = 0;i < 320*200;i++)
-    *(unsigned char*)(_image+i) = 30;
+  for(i = 0;i < SCREEN_W*SCREEN_H;i++)
+    *(unsigned char*)(_image+i) = rand()&15;
+    
   for(i = 0;i < 256*256;i++)
     *(unsigned char*)(_map+i) = *((unsigned char*)(map->dat+i))/2;
   
@@ -1046,9 +1069,9 @@ void PartTunnel(void)
   {
     DoDeformTable(&tunnelDeform, VBLframe);
     DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe, VBLframe*2, &tunnelDeform);
-    draw_trans_rle_sprite(buffer,text[7],0,200-28);
+    draw_trans_rle_sprite(buffer,text[7],0,SCREEN_H-28);
     WaitVBL();
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     tunnelDeform.param[0].phase = 64+VBLframe;
     tunnelDeform.param[1].phase = 192+VBLframe;
     //    tunnelDeform.param[1].phase=tunnelDeform.table[(2*VBLframe)&255]+VBLframe;
@@ -1078,9 +1101,9 @@ void PartTunnel(void)
   {
     DoDeformTable(&tunnelDeform, VBLframe);
     DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe*0, VBLframe*0, &tunnelDeform);
-    draw_trans_rle_sprite(buffer,text[8],0,200-28);
+    draw_trans_rle_sprite(buffer,text[8],0,SCREEN_H-28);
     WaitVBL();
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     tunnelDeform.param[0].phase = 64+VBLframe;
     tunnelDeform.param[1].phase = 192+VBLframe;
     //    tunnelDeform.param[1].phase=tunnelDeform.table[(2*VBLframe)&255]+VBLframe;
@@ -1095,9 +1118,9 @@ void PartTunnel(void)
   {
     DoDeformTable(&tunnelDeform, VBLframe);
     DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe, VBLframe*1, &tunnelDeform);
-    draw_trans_rle_sprite(buffer,text[9],0,200-28);
+    draw_trans_rle_sprite(buffer,text[9],0,SCREEN_H-28);
     WaitVBL();
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     tunnelDeform.param[0].phase = 64+VBLframe;
     tunnelDeform.param[1].phase = 192+VBLframe;
     //    tunnelDeform.param[1].phase=tunnelDeform.table[(2*VBLframe)&255]+VBLframe;
@@ -1113,9 +1136,9 @@ void PartTunnel(void)
   {
     DoDeformTable(&tunnelDeform, VBLframe);
     DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe, VBLframe*2, &tunnelDeform);
-    draw_trans_rle_sprite(buffer,text[10],0,200-28);
+    draw_trans_rle_sprite(buffer,text[10],0,SCREEN_H-28);
     WaitVBL();
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     tunnelDeform.param[0].phase = 64+VBLframe;
     tunnelDeform.param[1].phase = 192+VBLframe;
     //    tunnelDeform.param[1].phase=tunnelDeform.table[(2*VBLframe)&255]+VBLframe;
@@ -1124,8 +1147,12 @@ void PartTunnel(void)
     
   }
   
-  for(i = 0;i < 320*200;i++)
-    *(unsigned char*)(_image+i) = *((unsigned char*)(picture->dat+i))/2;
+  BITMAP *tmp = create_bitmap(SCREEN_W, SCREEN_H);
+  stretch_blit(data[BMP_glenzK].dat, tmp, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+
+  
+  for(i = 0;i < SCREEN_W*SCREEN_H;i++)
+    *(unsigned char*)(_image+i) = *((unsigned char*)(tmp->dat+i))/2 + (rand()&15);
   
   
   tunnelDeform.param[0].freq = 0x20000;
@@ -1137,7 +1164,7 @@ void PartTunnel(void)
     DoDeformTable(&tunnelDeform, VBLframe);
     DrawGlenzTunnel(buffer, TunnelLookup2, map, picture, VBLframe*2, VBLframe*0, &tunnelDeform);
     WaitVBL();
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     
     tunnelDeform.param[0].phase = -VBLframe;
     tunnelDeform.param[1].phase = 192+VBLframe;
@@ -1175,31 +1202,34 @@ void PartInternalBlob(void)
   //  obj.scale=ftofix(0.3);
   set_palette(pal);
   while(GetPosition() < 0x0300)
+//	while(0)
   {
     K3DPlaceObject(&obj, 0, itofix(-50), 
-      itofix(50)+70.0*fsin(itofix((1*VBLframe)&255)), 
+      itofix(50)+70*fsin(itofix((1*VBLframe)&255)), 
       (VBLframe<<14)&0xffffff, 
       (VBLframe<<14)&0xffffff, 
       (VBLframe<<14)&0xffffff);
     
     
-    if(GetPosition() == 0x0100)
+    if(GetPosition() >= 0x0100)
       texte = data[BMP_lasy].dat;
-    if(GetPosition() == 0x0200)
+    if(GetPosition() >= 0x0200)
       texte = data[BMP_back].dat;
     draw_sprite(buffer, texte, 0, 0);
     //    blit(text,buffer,0,0,0,0,320,32);
+    
     WaitVBL();
     blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
-    clear(buffer);
+    
+    //clear(buffer);
     K3DRotateObject(&obj);
     for(i = 0;i < obj.vertexes;i++)
     {
-      obj.rotated[i].x += 20.0*fsin(itofix((2*i+3*VBLframe)&255));
-      obj.rotated[i].y += 20.0*fsin(itofix((5*i+2*VBLframe)&255));
+      obj.rotated[i].x += 20*fsin(itofix((2*i+3*VBLframe)&255));
+      obj.rotated[i].y += 20*fsin(itofix((5*i+2*VBLframe)&255));
     }
     K3DProjectObject(&obj);
-        //K3DEnvMapObject(&obj);
+    //    K3DEnvMapObject(&obj);
     K3DDrawObject(buffer, &obj);
 
 
@@ -1292,13 +1322,13 @@ void Part2Blob(void)
     i = GetPosition();
 
     if((i<0x700) && (i>0x600))
-      draw_trans_rle_sprite(buffer,text[0],0,200-28);
+      draw_trans_rle_sprite(buffer,text[0],0,SCREEN_H-28);
     if((i<0x800) && (i>0x700))
-      draw_trans_rle_sprite(buffer,text[1],0,200-28);
+      draw_trans_rle_sprite(buffer,text[1],0,SCREEN_H-28);
     if((i<0x900) && (i>0x800))
-      draw_trans_rle_sprite(buffer,text[2],0,200-28);
+      draw_trans_rle_sprite(buffer,text[2],0,SCREEN_H-28);
     if((i<0xa00) && (i>0x900))
-      draw_trans_rle_sprite(buffer,text[3],0,200-28);
+      draw_trans_rle_sprite(buffer,text[3],0,SCREEN_H-28);
 
     if(key[KEY_ESC])
       break;
@@ -1310,63 +1340,20 @@ void Part2Blob(void)
 static void DrawWater(BITMAP * buffer, BITMAP * old)
 {
   // compute water data
-  /*
-  asm volatile("
-    pushl %%ebp
-    xorl %%ebx,%%ebx
-    xorl %%ecx,%%ecx
-    xorl %%edx,%%edx
-    movl  $320*150,%%ebp
-    
-    water_loop:
-    // pixel loop
-    xorl %%eax,%%eax
-    
-    // add the S,W,E,N pixels
-    movb -320(%%esi),%%al
-    movb -1(%%esi),%%bl
-    movb 1(%%esi),%%cl
-    movb 320(%%esi),%%dl
-    
-    // add them and div by 2
-    addl %%ebx,%%eax
-    addl %%edx,%%ecx
-    addl %%ecx,%%eax
-    shrl $1,%%eax
-    andl $0xff,%%eax
-    movb (%%edi),%%ah
-    
-    // search into the lookup
-    movb __map(%%eax),%%bl
-    
-    // plot it
-    movb %%bl,(%%edi)
-    
-    incl %%edi
-    incl %%esi
-    dec %%ebp
-    jnz water_loop
-    
-    popl %%ebp
-    ":
-  : "D"(buffer->dat+320*25), "S"(old->dat+320*25)
-    : "eax","ebx","ecx","edx","esi","edi"
-    );
-  */
-  
+
   int i;
   unsigned int b;
   char * table = _map;
-  for(i=640;i<320*197;i++)
+  for(i=SCREEN_W*2;i<SCREEN_W*(SCREEN_H-2);i++)
   {
-    b = *((unsigned char*)old->dat+i-1)+
-      *((unsigned char*)old->dat+i+1)+
-      *((unsigned char*)old->dat+i-320)+
-      *((unsigned char*)old->dat+i+320);
-    b/=2;
-    b&=255;
-    b=_map[256*b+(*((unsigned char*)buffer->dat+i))*1];
-    *((unsigned char*)buffer->dat+i) = b;
+		b = *((unsigned char*)old->dat+i-1)+
+			*((unsigned char*)old->dat+i+1)+
+			*((unsigned char*)old->dat+i-SCREEN_W)+
+			*((unsigned char*)old->dat+i+SCREEN_W);
+		b/=2;
+		b&=255;
+		b=_map[256*b+(*((unsigned char*)buffer->dat+i))*1];
+		*((unsigned char*)buffer->dat+i) = b;
   }
   rest(20);
 }
@@ -1374,7 +1361,7 @@ static void DrawWater(BITMAP * buffer, BITMAP * old)
 void PartWater(void)
 {
   BITMAP *old,*_buffer;
-  BITMAP *tortue;
+  BITMAP *tortue, *tortue2;
   PALETTE pal;
   BITMAP *temp;
   
@@ -1383,9 +1370,9 @@ void PartWater(void)
   int i,j;
   
   // create and clear 2 buffers
-  _buffer = create_bitmap(320, 202);
+  _buffer = create_bitmap(SCREEN_W, SCREEN_H+2);
   clear(_buffer);
-  old = create_bitmap(320, 202);
+  old = create_bitmap(SCREEN_W, SCREEN_H+2);
   clear(old);
   
   srand(154);
@@ -1412,6 +1399,9 @@ void PartWater(void)
   
   color_map = tableWater;
   
+  tortue2 = create_bitmap(172*SCALE_X, 256*SCALE_Y);
+  
+  stretch_blit(tortue, tortue2, 0, 0, 172, 256, 0, 0,172*SCALE_X, 256*SCALE_Y);
   
   // calculate the lookup
   for(x = 0;x < 256;x++)
@@ -1426,7 +1416,7 @@ void PartWater(void)
   
   VBLframe = retrace_count = 200;
   x = 0;
-  x =-300;
+  x =-300*SCALE_X;
   while(GetPosition() < 0x1700)
   {
     // swap new and old buffer
@@ -1436,31 +1426,31 @@ void PartWater(void)
     
     if(GetPosition() == 0x1500)
     {
-      x = -175;
+      x = -175*SCALE_X;
     }
-    if ((x>-176) && (x<=0))
-      x++;
+    if ((x>-176*SCALE_X) && (x<=0))
+      x+=SCALE_X;
 
     // put the picture
     //      blit(tortue,buffer,x,(fsin((itofix((4*VBLframe)&255)))/2340)+27,0,0,172,256);
-    blit(_buffer, buffer, 0, 0, 0, 0, 320, 200);
-    draw_trans_sprite(buffer, tortue, x, (fsin((itofix((10*VBLframe)&255)))/2340)-27);
+    blit(_buffer, buffer, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+    draw_trans_sprite(buffer, tortue2, x, (fsin((itofix((10*VBLframe)&255)))/2340)-27);
     
     WaitVBL();
     //      vsync();
     
     // blit into screen
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     
     // adjust contours
-    line(old, 0, 0, 319, 0, 0);
+    /*line(old, 0, 0, 319, 0, 0);
     line(old, 0, 0, 0, 199, 0);
     line(old, 319, 0, 319, 199, 0);
     line(old, 0, 199, 319, 199, 0);
-    
+    */
     // draw water plot motion
-    _putpixel(old, 160+100*cos(2*3.14159*VBLframe/256), 100+50*sin(4*3.14159*VBLframe/256), 127);
-    putpixel(old, rand()%319, 25+rand()%150, 127);
+    _putpixel(old, SCREEN_W/2+SCREEN_W/3*cos(2*3.14159*VBLframe/256), SCREEN_H/2+SCREEN_H/3*sin(4*3.14159*VBLframe/256), 127);
+    putpixel(old, rand()%(SCREEN_W-1), rand()%(SCREEN_H-1), 127);
     
     // and calculate it
     DrawWater(_buffer, old);
@@ -1476,30 +1466,34 @@ void PartMetaballs(void)
   K3DTObject obj;
   BITMAP *map,*blob,*back;
   PALETTE pal;
-  int i,c;
+  int i,c,x,y;
   
   clear(screen);
   K3DInit();
   K3DInitObject(&obj);
   K3DLoadObjectASC("k.asc", &obj);
-  blob = create_bitmap(64, 64);
+  blob = create_bitmap(SCALE_X*64, SCALE_Y*64);
   clear(blob);
-  for(i = 0;i < 32;i++)
-  {
-    c = 256-8*((i*i)/16);
-    if(c > 255)
-      c = 255;
-    if(c < 0)
-      c = 0;
-    circle(blob, 32, 32, i, c);
-    circle(blob, 31, 31, i, c);
-    circle(blob, 31, 32, i, c);
-    circle(blob, 32, 31, i, c);
+  
+  for(y = 0;y < SCALE_Y*64;y++) {
+	  for(x = 0;x < SCALE_X*64;x++) {
+	  	int cx,cy;
+	  	cx = x - SCALE_X*64/2;
+	  	cy = y - SCALE_Y*64/2;
+	  	float dist = 256 - 8/SCALE_Y * sqrt(cx*cx+cy*cy);
+	  	if (dist > 255) dist = 255; 
+	  	if (dist < 0) dist = 0; 
+	  	putpixel(blob, x,y, dist);
+	  }
   }
   
   set_projection_viewport(0, 0, SCREEN_W, SCREEN_H);
   map = data[BMP_map1].dat;
-  back = data[BMP_glenzMind].dat;
+  back = create_bitmap(SCREEN_W, SCREEN_H);
+  data[BMP_glenzMind].dat;
+  stretch_blit(data[BMP_glenzMind].dat, back, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+
+
   memcpy(pal, data[PAL_glenz3].dat, sizeof(PALETTE));
   
   K3DSetObjectRendering(&obj, TEXTURE, QSORT, NONE);
@@ -1536,25 +1530,25 @@ void PartMetaballs(void)
     c = 8;
     for(i = 0;i < c;i++)
       draw_trans_sprite(buffer, blob, 
-        160-32+fixtoi(60*fsin(itofix((VBLframe+i*256/c)&255)))+fixtoi(80*fcos(itofix((VBLframe*2+i*256/c)&255)))
-        , 100-32+fixtoi(70*fcos(itofix((VBLframe*3+i*256/c)&255)))+fixtoi(40*fsin(itofix((VBLframe+i*256*c)&255))));
+        SCALE_X*160-SCALE_X*32+fixtoi(SCALE_X*60*fsin(itofix((VBLframe+i*256/c)&255)))+fixtoi(SCALE_X*80*fcos(itofix((VBLframe*2+i*256/c)&255)))
+        , SCALE_Y*100-SCALE_Y*32+fixtoi(SCALE_Y*70*fcos(itofix((VBLframe*3+i*256/c)&255)))+fixtoi(SCALE_Y*40*fsin(itofix((VBLframe+i*256*c)&255))));
     
     K3DDrawObject(buffer, &obj);
     
-    
-    c = 4;
+    c = 6;
     for(i = 0;i < c;i++)
       draw_trans_sprite(buffer, blob, 
-        160-32+fixtoi(60*fsin(itofix((VBLframe+i*256/c)&255)))+fixtoi(80*fcos(itofix((VBLframe+i*256/c)&255)))
-        , 100-32+fixtoi(80*fcos(itofix((VBLframe+i*256/c)&255)))+fixtoi(30*fsin(itofix((VBLframe*2+i*256*c)&255))));
+        SCALE_X*160-SCALE_X*32+fixtoi(SCALE_X*60*fsin(itofix((VBLframe+i*256/c)&255)))+fixtoi(SCALE_X*80*fcos(itofix((VBLframe+i*256/c)&255)))
+        , SCALE_Y*100-SCALE_Y*32+fixtoi(SCALE_Y*80*fcos(itofix((VBLframe+i*256/c)&255)))+fixtoi(SCALE_Y*30*fsin(itofix((VBLframe*2+i*256*c)&255))));
     
 
-    draw_trans_rle_sprite(buffer,text[4],0,200-28);
+    draw_trans_rle_sprite(buffer,text[4],0,SCREEN_H-28);
 
     if(key[KEY_ESC])
       break;
   }
   K3DDeleteObject(&obj);
+  destroy_bitmap(blob);
 }
 
 void PartTunnel3d(void)
@@ -1573,10 +1567,10 @@ void PartTunnel3d(void)
   map = data[BMP_map1].dat;
   memcpy(pal, data[PAL_glenz2].dat, sizeof(PALETTE));
   
-  tv = create_bitmap(80, 50);
+  tv = create_bitmap(80*SCALE_X, 50*SCALE_Y);
   
   K3DSetObjectRendering(&obj, TEXTURE, NONE, Z);
-  K3DPlaceObject(&obj, 0, 0, itofix(100), 0, 0, 0);
+  K3DPlaceObject(&obj, 0, 0, itofix(100*SCALE_X), 0, 0, 0);
   K3DSetObjectMap(&obj, map);
   
   K3DRotateObject(&obj);
@@ -1596,11 +1590,11 @@ void PartTunnel3d(void)
       (VBLframe<<16)&0xffffff);
     
     
-    blit(tv, buffer, 0, 0, 0, 0, 80, 50);
-    rotate_sprite(buffer, tv, 320-80, 200-50, VBLframe<<16);
+    blit(tv, buffer, 0, 0, 0, 0, 80*SCALE_X, 50*SCALE_Y);
+    rotate_sprite(buffer, tv, SCREEN_W-80*SCALE_X, SCREEN_H-50*SCALE_Y, VBLframe<<16);
     //    rect(buffer,0,0,SCREEN_W/4,SCREEN_H/4,128);
-    line(buffer, 0, 50, 319, 50, 128);
-    line(buffer, 80, 0, 80, 199, 128);
+    line(buffer, 0, 50*SCALE_Y, SCREEN_W-1, 50*SCALE_Y, 128);
+    line(buffer, 80*SCALE_X, 0, 80*SCALE_X, SCREEN_H-1, 128);
     
     stretch_blit(buffer, tv, 0, 0, SCREEN_W, SCREEN_H, 0, 0, (SCREEN_W/4), (SCREEN_H/4));
     WaitVBL();
@@ -1616,7 +1610,7 @@ void PartTunnel3d(void)
     {
       }
     
-    draw_trans_rle_sprite(buffer,text[5],0,200-28);
+    draw_trans_rle_sprite(buffer,text[5],0,SCREEN_H-28);
 
     if(key[KEY_ESC])
       break;
@@ -1641,7 +1635,7 @@ void PartTunnel3d2(void)
   memcpy(pal, data[PAL_glenz3].dat, sizeof(PALETTE));
   
   K3DSetObjectRendering(&obj, TEXTURE, NONE, NONE);
-  K3DPlaceObject(&obj, 0, 0, itofix(100), 0, 0, 0);
+  K3DPlaceObject(&obj, 0, 0, itofix(100*SCALE_X), 0, 0, 0);
   K3DSetObjectMap(&obj, map);
   
   K3DRotateObject(&obj);
@@ -1679,9 +1673,9 @@ void PartTunnel3d2(void)
     }
 
     if (GetPosition() < 0x0d00)
-      draw_trans_rle_sprite(buffer,text[5],0,200-28);
+      draw_trans_rle_sprite(buffer,text[5],0,SCREEN_H-28);
     else
-      draw_trans_rle_sprite(buffer,text[6],0,200-28);
+      draw_trans_rle_sprite(buffer,text[6],0,SCREEN_H-28);
     
     if(key[KEY_ESC])
       break;
@@ -1696,6 +1690,7 @@ void PartPlasma(void)
   BITMAP* map,* picture;
   PALETTE pal,black,begin;
   int i,fade;
+  BITMAP* overlay;
   
   map = data[BMP_map1].dat;
   picture = data[BMP_glenzK].dat;
@@ -1705,12 +1700,14 @@ void PartPlasma(void)
   for(i = 0;i < 256;i++)
     black[i].r=black[i].g=black[i].b=0;
 
+  overlay = create_bitmap(SCREEN_W, SCREEN_H);
+  stretch_blit(data[BMP_think].dat, overlay, 0,0,320,200,0,0,SCREEN_W, SCREEN_H);
 
   // Init global buffers
   for(i = 0;i < 256*256;i++)
     *(unsigned char*)(_map+i) = *((unsigned char*)(map->dat+i))/2;
-  for(i = 0;i < 320*200;i++)
-    *(unsigned char*)(_image+i) = 30;
+  for(i = 0;i < SCREEN_W*SCREEN_H;i++)
+    *(unsigned char*)(_image+i) = rand()&15;
   
   tunnelDeform.param[0].freq = 0x10000;
   tunnelDeform.param[1].freq = 0x10000;
@@ -1724,7 +1721,7 @@ void PartPlasma(void)
                     tunnelDeform.table[(VBLframe+194)&255],
                     tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
     WaitVBL();
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     tunnelDeform.param[0].phase = 64+VBLframe;
     tunnelDeform.param[1].phase = tunnelDeform.table[(5*VBLframe)&255];
     tunnelDeform.param[2].phase = tunnelDeform.table[VBLframe&255]+VBLframe;
@@ -1742,7 +1739,7 @@ void PartPlasma(void)
                     tunnelDeform.table[(VBLframe+194)&255],
                     tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
     WaitVBL();
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     tunnelDeform.param[0].phase = 64+VBLframe;
     tunnelDeform.param[1].phase = tunnelDeform.table[(2*VBLframe)&255];
     tunnelDeform.param[2].phase = tunnelDeform.table[VBLframe&255]+VBLframe;
@@ -1756,7 +1753,7 @@ void PartPlasma(void)
                     tunnelDeform.table[(VBLframe+194)&255],
                     tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
     WaitVBL();
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     tunnelDeform.param[0].phase = 64+VBLframe;
     tunnelDeform.param[1].phase = tunnelDeform.table[(2*VBLframe)&255];
     tunnelDeform.param[2].phase = VBLframe;
@@ -1770,14 +1767,14 @@ void PartPlasma(void)
                     tunnelDeform.table[(VBLframe+194)&255],
                     tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
     WaitVBL();
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     tunnelDeform.param[0].phase = 64+VBLframe;
     tunnelDeform.param[1].phase = tunnelDeform.table[(2*VBLframe)&255];
     tunnelDeform.param[2].phase = VBLframe;
     tunnelDeform.param[3].phase = 274+VBLframe;
   }
-  for(i = 0;i < 320*200;i++)
-    *(unsigned char*)(_image+i) = 70+*((unsigned char*)(((BITMAP*)data[BMP_think].dat)->dat+i))/2;
+  for(i = 0;i < SCREEN_W*SCREEN_H;i++)
+    *(unsigned char*)(_image+i) = 70+*((unsigned char*)(overlay->dat+i))/2;
   while(GetPosition() < 0x1d00)
   {
     DoDeformTable(&tunnelDeform, VBLframe);
@@ -1785,7 +1782,7 @@ void PartPlasma(void)
                     tunnelDeform.table[(VBLframe+194)&255],
                     tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
     WaitVBL();
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     tunnelDeform.param[0].phase = 64+VBLframe;
     tunnelDeform.param[1].phase = tunnelDeform.table[(2*VBLframe)&255];
     tunnelDeform.param[2].phase = VBLframe;
@@ -1801,11 +1798,11 @@ void PartPlasma(void)
     WaitVBL();
     if (fade<64*3)
       fade_interpolate(begin, black, pal, fade/3, 0, 255);
-    vsync();
+    //vsync();
     fade++;
     set_palette(pal);
 
-    blit(buffer, screen, 0, 0, 0, 0, 320, 200);
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
     tunnelDeform.param[0].phase = 64+VBLframe;
     tunnelDeform.param[1].phase = tunnelDeform.table[(2*VBLframe)&255];
     tunnelDeform.param[2].phase = VBLframe;
@@ -1818,7 +1815,10 @@ void PartEnd(void)
 {
   K3DTObject obj;
   int i;
+  float pos;
   PALETTE black,pal;
+  BITMAP *back;
+  BITMAP *end;
 
   K3DInit();
   K3DInitObject(&obj);
@@ -1836,29 +1836,33 @@ void PartEnd(void)
   for(i=0;i<255;i++)
     black[i].r=black[i].g=black[i].b=0;
 
+  back = create_bitmap(SCREEN_W, SCREEN_H);
+  stretch_blit(data[BMP_bumpBack].dat, back, 0,0,320,200,0,0,SCREEN_W, SCREEN_H);
+  end = create_bitmap(SCREEN_W, SCREEN_H);
+  stretch_blit(data[BMP_kEnd].dat, end, 0,0,320,200,0,0,SCREEN_W, SCREEN_H);
 
   obj.scale=ftofix(0.5);
-  #ifdef USE_JGMOD
-  goto_mod_track(0x1f);
-  #endif
+
+	MusicSetPosition(0x1f);
+
   color_map = tableGlenz;
   set_palette(data[PAL_glenz2].dat);
-  VBLframe=retrace_count=-100;
-  for(i=VBLframe;i<800*2;i=VBLframe)
+  pos = SCREEN_H;
+    
+  while (pos > -1000)// for(i=VBLframe; i<800*2; i=VBLframe)
   {
+    pos -= delta;
     WaitVBL();
-//    vsync();
-    blit(buffer,screen,0,0,0,0,320,200);
-    blit(data[BMP_bumpBack].dat,buffer,0,0,0,0,320,200);
+    blit(buffer,screen,0,0,0,0,SCREEN_W,SCREEN_H);
+    blit(back,buffer,0,0,0,0,SCREEN_W,SCREEN_H);
 
-//    K3DPlaceObject(&obj,itofix(250),itofix(0),itofix(300),itofix(64),itofix(0),itofix(i));
-    K3DPlaceObject(&obj,itofix(250)+100*fsin(itofix(i&255)),itofix((i&1023)-512),itofix(300),itofix(i),itofix(0),itofix(i));
+    K3DPlaceObject(&obj,itofix(250)+100*fsin(itofix(VBLframe&255)),itofix((VBLframe&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
     K3DRenderObject(buffer, &obj);
 
-    K3DPlaceObject(&obj,itofix(250)+100*fcos(itofix(i&255)),itofix(((i+512)&1023)-512),itofix(300),itofix(i),itofix(0),itofix(i));
+    K3DPlaceObject(&obj,itofix(250)+100*fcos(itofix(VBLframe&255)),itofix(((VBLframe+512)&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
     K3DRenderObject(buffer, &obj);
 
-    draw_trans_rle_sprite(buffer,data[BMP_scroll].dat,160,-i/2);
+    draw_trans_rle_sprite(buffer,data[BMP_scroll].dat,SCREEN_W/2,pos);
 
     if (key[KEY_ESC])
       return;
@@ -1869,12 +1873,9 @@ void PartEnd(void)
     WaitVBL();
     vsync();
     set_palette(pal);
-    blit(buffer,screen,0,0,0,0,320,200);
-//    MIDASsetMusicVolume(play,64-(i/2));
-//    blit(data[BMP_bumpBack].dat,buffer,0,0,0,0,320,200);
-    blit(data[BMP_kEnd].dat,buffer,0,0,0,0,320,200);
+    blit(buffer,screen,0,0,0,0,SCREEN_W,SCREEN_H);
+    blit(end,buffer,0,0,0,0,SCREEN_W,SCREEN_H);
 
-//    K3DPlaceObject(&obj,itofix(250),itofix(0),itofix(300),itofix(64),itofix(0),itofix(i));
     K3DPlaceObject(&obj,itofix(250)+100*fsin(itofix(VBLframe&255)),itofix(((VBLframe)&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
     K3DRenderObject(buffer, &obj);
 
@@ -1890,26 +1891,27 @@ void PartEnd(void)
 
 void Demo(void)
 {
-  set_gfx_mode(mode, 320, 200, 0, 0);
+  //set_gfx_mode(mode, 320, 200, 0, 0);
   buffer = create_bitmap(SCREEN_W, SCREEN_H);
 
 
   PartInternalBlob();
 
+
   {
   PALETTE pal;
   fade_out(12);
   memcpy(pal,data[PAL_kIntro].dat,sizeof(PALETTE));
-  blit(data[BMP_kIntro].dat,screen,0,0,0,0,320,200);
-  //    set_palette(pal);
+  stretch_blit(data[BMP_kIntro].dat, screen, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+  
   fade_in(pal,2);
   while(GetPosition()<0x0400)
   {
-  WaitVBL();
+    WaitVBL();
   }
   fade_out(12);
   memcpy(pal,data[PAL_mindIntro].dat,sizeof(PALETTE));
-  blit(data[BMP_mindIntro].dat,screen,0,0,0,0,320,200);
+  stretch_blit(data[BMP_mindIntro].dat, screen, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
   //    set_palette(pal);
   fade_in(pal,2);
   while(GetPosition()<0x043e)
@@ -1931,7 +1933,7 @@ void Demo(void)
   PartTunnel();
 
   PartWater();
-  
+	
   PartPlasma();
 
   PartEnd();
@@ -1944,68 +1946,60 @@ int main(int argc, char ** argv)
 {
   char buf[80];
   int refreshRate;
-
-
-
   
   printf("MindLink (c) KNIGHTS 1997\n");
   printf("  ( Run with any parameter to run sound setup )\n");
   printf("  Initializing.\n");
+
+  if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE) < 0) {
+    fprintf(stderr, "Couldn't initialize SDL: %s\n", SDL_GetError());
+    exit(1);
+  }
   allegro_init();
-  
-    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE) < 0) {
-      fprintf(stderr, "Couldn't initialize SDL: %s\n", SDL_GetError());
-      exit(1);
-    }
-    
+
   if (argc>1)
-    mode = GFX_AUTODETECT_FULLSCREEN;
+  	mode = GFX_AUTODETECT_FULLSCREEN;
   
   /* load the datafile into memory */
-  printf("  UnPacking.\n");
-
+  printf("  UnPacking.");
+  fflush(stdout);
   data = load_datafile("mindlink.dat");
   if(!data)
   {
     allegro_exit();
     printf("  Error loading example.dat!\n\n");
-    #ifdef MIDAS
-      if(!MIDASclose())
-      MIDASerror();
-    #endif
-      exit(1);
+    exit(1);
   }
-  
   install_keyboard();
   
-  printf("  Generating.\n");
- 
+  printf(".");
+  fflush(stdout);
   //install_timer();
-    
 
-    Load();
+  printf(".");
+  fflush(stdout);
+
+  Load();
+
+  printf(".");
+  fflush(stdout);
   
-  printf("  Composing.\n");
-
- 
+  MusicStart("mindlink.xm");
   
+  SDL_AddTimer(100, MusicUpdate, 0);
+  SDL_AddTimer(1000,TimerHandler, 0);
 
-  OpenMusic("mindlink.xm");
-  //install_int_ex(my_timer_handler,BPS_TO_TIMER(70));
-  //install_int_ex(music_timer_handler,BPS_TO_TIMER(100));
   
-  SDL_AddTimer(1000/70, my_timer_handler, 0);
-  printf("  Running!\n");
-
-
-
+  //install_int(MusicUpdate, 100);
+  //install_int(TimerHandler, 1000);    
+  
   Demo();
  
+  MusicStop();
   
-  CloseMusic();
   
-    /* unload the datafile when we are finished with it */
-    unload_datafile(data);
+  /* unload the datafile when we are finished with it */
+  unload_datafile(data);
   
   set_gfx_mode(GFX_TEXT, 640, 480, 0, 0);
   printf("\n       ______                                                             _____\n");
@@ -2019,7 +2013,6 @@ int main(int argc, char ** argv)
   printf(" !Fuck'Em All! \\//                          \\\\/          \\\\/      !SenseRofTHN! \n");
   
   printf("\nMindLink 1.1 (GPL) [%s %s]\n\n", __DATE__, __TIME__);
-  printf("http://knights.planet-d.net <kassoulet gmail.com>\n");
   printf("                     \n");
   printf("\n");
   
