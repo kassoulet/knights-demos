@@ -1,0 +1,21 @@
+
+      K h i s t m a s 
+
+        by  knights
+
+    We wish you,  etc...
+
+ http://knights.planet-d.net
+
+
+-----------------------------------------------------------
+2 days of code,gfx,music
+
+100% C++, no asm,mmx,sse,ogl,d3d... only unoptimized crap
+640x480x32 - PentiumII mini. - too much memory used (I think 64Mb mini.)
+DirectDraw - GDI - BeWindow - dga - aalib - x11 - ggi - svgalib - photon 
+
+linux,beos&qnx versions are coming...
+(yes, SDL rulez - http://www.libsdl.org)
+
+and remember: WE LOVE YOU !!
