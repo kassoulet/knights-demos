@@ -13,7 +13,7 @@
   buggy module player
   but here is it: win32/linux versions
 
-  2009 !
+  updated in 2009 !
 */
 
 #include <stdio.h>
@@ -27,9 +27,9 @@
 
 #undef SAMPLE
 
-int SCREEN_WIDTH = 1680;
-int SCREEN_HEIGHT= 1050;
-int mode=GFX_AUTODETECT_WINDOWED;
+int SCREEN_WIDTH = 1280;
+int SCREEN_HEIGHT= 800;
+
 
 
 extern int MusicGetPosition(void);
@@ -40,8 +40,8 @@ extern void MusicSetPosition(int position);
 
 int GetPosition(void)
 {
-    if (key[KEY_ESC])
-        return 0xffff;
+    //if (key[KEY_ESC])
+    //    return 0xffff;
     return MusicGetPosition();
 }
 
@@ -119,6 +119,10 @@ static void UpdateTimer()
 void WaitVBL()
 {
     UpdateTimer();
+
+    if (key[KEY_ESC])
+        exit(2);
+
 
     if (key[KEY_SPACE])
     {
@@ -679,73 +683,14 @@ void Load(void)
     PALETTE pal;
 
     BITMAP *titre = data[BMP_winText].dat;
-    //load_bitmap("gfx/winlogo.bmp", pal);
-    BITMAP *menu = data[BMP_winMenu].dat;//load_bitmap("gfx/win.bmp", pal);
-    //  pal          = data[PAL_winMenu].dat;
+    BITMAP *menu = data[BMP_winMenu].dat;
+
     memcpy(pal, data[PAL_winMenu].dat, sizeof(pal));
 
-    set_gfx_mode(mode, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0);
+    //set_gfx_mode(mode, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0);
 
     SCALE_X = SCREEN_W/320.0;
     SCALE_Y = SCREEN_H/200.0;
-
-    /*
-    set_gfx_mode(mode, 1024, 768, 0, 0);
-
-    for(x = 0;x < 330;x++)
-      for(y = 0;y < 36;y++)
-      putpixel(menu, x, y, getpixel(menu, x, y)+64);
-    //      menu->line[y][x] = menu->line[y][x] +64;
-
-    for(i = 0;i < 16;i++)
-    {
-      pal[i+64].r = pal[i].r;
-      pal[i+64].g = pal[i].g;
-      pal[i+64].b = pal[i].b;
-    }
-    pal[255].r = 63;
-    pal[255].g = 63;
-    pal[255].b = 63;
-    for(i = 0;i < 64;i++)
-    {
-      color.r = color.g = color.b = 0;
-      set_color(i, &color);
-    }
-
-    //vsync();
-
-    for(x = 0;x < 640;x++)
-      for(y = 0;y < 480;y++)
-    {
-      i = (i+(rand()>>29)+((y*2)/15))/2;
-      if(i < 1) i = 1;
-      if(i > 63) i = 63;
-      _putpixel(screen, x, y, i);
-    }
-    //vsync();
-    for(i = 0;i < 64;i++)
-    {
-      pal[i].r = pal[i].g = 0;
-      pal[i].b = 64-i;
-    }
-
-    rectfill(screen, 154, 169, 484, 309, 64+7);
-    blit(menu, screen, 1, 1, 154, 169, 330, 36);
-    line(screen, 154, 169, 154, 309, 64+15);
-    line(screen, 484, 309, 154, 309, 64+8);
-    line(screen, 484, 169, 484, 309, 64+8);
-
-    line(screen, 190, 268, 190, 288, 64+8);
-    line(screen, 190, 268, 449, 268, 64+8);
-    line(screen, 449, 268, 449, 288, 64+15);
-    line(screen, 190, 288, 449, 288, 64+15);
-    text_mode(-1);
-    textout_centre(screen, font, "MindLink 1.0", 321, 215, 64+0);
-    textout_centre(screen, font, "Building", 321, 240, 64+0);
-
-    draw_sprite(screen, titre, 1, 1);
-    set_palette(pal);
-    //vsync();*/
 
     TunnelLookup = malloc(SCREEN_W*SCREEN_H*sizeof(short));
     TunnelLookup2 = malloc(SCREEN_W*SCREEN_H*sizeof(short));
@@ -755,11 +700,6 @@ void Load(void)
 
     for (x = 0;x < SCREEN_W;x++)
     {
-        if (x%20)
-        {
-            //rectfill(screen, 192+16*(x/40), 270, 14+192+16*(x/40), 286, 32);
-        }
-        //rest(1);
 
         for (y = 0;y < SCREEN_H;y++)
         {
@@ -814,8 +754,8 @@ void Load(void)
         for (i=0;i<11;i++)
         {
             BITMAP *_text;
-            _text   = create_bitmap(320,27);
-            blit(data[BMP_text].dat,_text,0,i*27,0,0,320,27);
+            _text   = create_bitmap(320*SCALE_X,27*SCALE_Y);
+            stretch_blit(data[BMP_text].dat,_text,0,i*27,320,27,0,0,320*SCALE_X,27*SCALE_Y);
             text[i] = get_rle_sprite(_text);
         }
     }
@@ -832,135 +772,6 @@ void Load(void)
 
 }
 
-// not used: not working :)
-void Bump(void)
-{
-    RGB color;
-    int i,x,y,frame,delta,old;
-    int lx,ly,dx,dy,vx,vy,c,x1,y1,x2,y2,tx,ty;
-
-    BITMAP * map,*buffer,*deltas,*lightMap;
-    PALETTE pal;
-
-
-
-    map = load_bitmap("height.pcx", pal);
-    buffer = create_bitmap(320, 200);
-    deltas = create_bitmap(640, 200);
-    lightMap = create_bitmap(256, 256);
-
-    set_gfx_mode(mode, 320, 200, 0, 0);
-
-    clear(screen);
-    clear(buffer);
-
-    set_palette(pal);
-
-    for (y = 1;y < 198;y++)
-        for (x = 1;x < 318;x++)
-        {
-            *(deltas->line[y]+2*x) = *(map->line[y]+x+1)-*(map->line[y]+x-1);;
-            *(deltas->line[y]+2*x+1) = *(map->line[y+1]+x)-*(map->line[y-1]+x);;
-        }
-
-    for (y = 0;y < 256;y++)
-        for (x = 0;x < 256;x++)
-        {
-            int tx,ty,dist;
-
-            tx = x-127;
-            ty = y-127;
-            dist = sqrt(tx*tx+ty*ty);
-            if (dist < 64)
-                putpixel(lightMap, x, y,
-                         /*(random()>>28)+*/(char)(254-(dist*4))+1);
-            else
-                putpixel(lightMap, x, y, 1);
-            if (getpixel(lightMap, x, y) < 1)
-                putpixel(lightMap, x, y, 1);
-        }
-
-    for (;;)
-    {
-        color.r = color.g = color.b = 00;
-        set_color(0, &color);
-        vsync();
-        color.r = 20;
-        //    set_color(0, &color);
-        delta = retrace_count-old;
-        old = retrace_count;
-        frame += delta;
-
-        frame++;
-
-        x1 = 0;
-        //+fixtoi(fmul(fsin(itofix(frame&255)),itofix(160)));
-        y1 = 0;
-        //+fixtoi(fmul(fcos(itofix(frame&255)),itofix(100)));
-        x2 = x1+256;
-        y2 = y1+256;
-        tx = x1;
-        ty = y1;
-        if (x1 < buffer->cl) x1 = buffer->cl;
-        if (y1 < buffer->ct) y1 = buffer->ct;
-        if (x1 > buffer->cr) x1 = buffer->cr;
-        if (y1 > buffer->cb) y1 = buffer->cb;
-        if (x2 < buffer->cl) x2 = buffer->cl;
-        if (y2 < buffer->ct) y2 = buffer->ct;
-        if (x2 > buffer->cr) x2 = buffer->cr;
-        if (y2 > buffer->cb) y2 = buffer->cb;
-
-        //       clear(buffer);
-        rectfill(buffer, 0, 0, x1, y2, 0);
-        rectfill(buffer, 0, y2, x2, 199, 0);
-        rectfill(buffer, x1, 0, 319, y1, 0);
-        rectfill(buffer, x2, y1, 319, 199, 0);
-
-
-        for (y = y1+1;y < y2-1;y++)
-        {
-            vx = x-tx;
-            vy = (int)y-ty;
-            for (x = x1+1;x < x2;x++)
-            {
-                //          vx=x-tx;
-                dx = (char) *(deltas->line[y]+2*x);
-                dy = (char) *(deltas->line[y]+2*x+1);
-                c = (char) *(lightMap->line[(dy+vy)&255]+((dx+(vx++))&255));
-
-                *(buffer->line[y]+x) = c;
-            }
-        }
-
-        //       rect(buffer,x1,y1,x2,y2,250);
-
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
-
-        if (key[KEY_ESC])
-            break;
-    }
-
-
-    /*
-    dx = *(map->line[y]+x+1)-*(map->line[y]+x-1);
-    vx = x-mouse_x;
-    c = abs(vx-dx);
-    dy = *(map->line[y+1]+x)-*(map->line[y-1]+x);
-    vy = y-mouse_y;
-    c += abs(vy-dy);
-
-    c = 255-c;
-    c = -c;
-    if(c<=0) c = 1;
-    if(c>255) c = 255;
-
-    *(buffer->line[y]+x) = c;
-    */
-
-
-
-
-}
 
 typedef struct TDeformTableParam
 {
@@ -1057,7 +868,7 @@ void PartTunnel(void)
     {
         DoDeformTable(&tunnelDeform, VBLframe);
         DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe, VBLframe*2, &tunnelDeform);
-        draw_trans_rle_sprite(buffer,text[7],0,SCREEN_H-28);
+        draw_trans_rle_sprite(buffer,text[7],0,SCREEN_H-28*SCALE_Y);
         WaitVBL();
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
@@ -1089,7 +900,7 @@ void PartTunnel(void)
     {
         DoDeformTable(&tunnelDeform, VBLframe);
         DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe*0, VBLframe*0, &tunnelDeform);
-        draw_trans_rle_sprite(buffer,text[8],0,SCREEN_H-28);
+        draw_trans_rle_sprite(buffer,text[8],0,SCREEN_H-28*SCALE_Y);
         WaitVBL();
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
@@ -1106,7 +917,7 @@ void PartTunnel(void)
     {
         DoDeformTable(&tunnelDeform, VBLframe);
         DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe, VBLframe*1, &tunnelDeform);
-        draw_trans_rle_sprite(buffer,text[9],0,SCREEN_H-28);
+        draw_trans_rle_sprite(buffer,text[9],0,SCREEN_H-28*SCALE_Y);
         WaitVBL();
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
@@ -1124,7 +935,7 @@ void PartTunnel(void)
     {
         DoDeformTable(&tunnelDeform, VBLframe);
         DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe, VBLframe*2, &tunnelDeform);
-        draw_trans_rle_sprite(buffer,text[10],0,SCREEN_H-28);
+        draw_trans_rle_sprite(buffer,text[10],0,SCREEN_H-28*SCALE_Y);
         WaitVBL();
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
@@ -1177,7 +988,6 @@ void PartInternalBlob(void)
     memcpy(pal, data[PAL_glenz1].dat, sizeof(PALETTE));
     texte = data[BMP_after].dat;
 
-    //  map    = load_bitmap("texture3.pcx",pal);
     K3DSetObjectRendering(&obj, TEXTURE, NONE, Z);
     K3DPlaceObject(&obj, 0, 0, itofix(100), 0, 0, 0);
     K3DSetObjectMap(&obj, map);
@@ -1187,10 +997,9 @@ void PartInternalBlob(void)
     K3DEnvMapObject(&obj);
 
     color_map = tableGlenz;
-    //  obj.scale=ftofix(0.3);
     set_palette(pal);
     while (GetPosition() < 0x0300)
-//	while(0)
+
     {
         K3DPlaceObject(&obj, 0, itofix(-50),
                        itofix(50)+70*fsin(itofix((1*VBLframe)&255)),
@@ -1204,12 +1013,10 @@ void PartInternalBlob(void)
         if (GetPosition() >= 0x0200)
             texte = data[BMP_back].dat;
         draw_sprite(buffer, texte, 0, 0);
-        //    blit(text,buffer,0,0,0,0,320,32);
 
         WaitVBL();
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
 
-        //clear(buffer);
         K3DRotateObject(&obj);
         for (i = 0;i < obj.vertexes;i++)
         {
@@ -1217,9 +1024,7 @@ void PartInternalBlob(void)
             obj.rotated[i].y += 20*fsin(itofix((5*i+2*VBLframe)&255));
         }
         K3DProjectObject(&obj);
-        //    K3DEnvMapObject(&obj);
         K3DDrawObject(buffer, &obj);
-
 
         if (key[KEY_ESC])
             break;
@@ -1310,13 +1115,13 @@ void Part2Blob(void)
         i = GetPosition();
 
         if ((i<0x700) && (i>0x600))
-            draw_trans_rle_sprite(buffer,text[0],0,SCREEN_H-28);
+            draw_trans_rle_sprite(buffer,text[0],0,SCREEN_H-28*SCALE_Y);
         if ((i<0x800) && (i>0x700))
-            draw_trans_rle_sprite(buffer,text[1],0,SCREEN_H-28);
+            draw_trans_rle_sprite(buffer,text[1],0,SCREEN_H-28*SCALE_Y);
         if ((i<0x900) && (i>0x800))
-            draw_trans_rle_sprite(buffer,text[2],0,SCREEN_H-28);
+            draw_trans_rle_sprite(buffer,text[2],0,SCREEN_H-28*SCALE_Y);
         if ((i<0xa00) && (i>0x900))
-            draw_trans_rle_sprite(buffer,text[3],0,SCREEN_H-28);
+            draw_trans_rle_sprite(buffer,text[3],0,SCREEN_H-28*SCALE_Y);
 
         if (key[KEY_ESC])
             break;
@@ -1532,7 +1337,7 @@ void PartMetaballs(void)
                               , SCALE_Y*100-SCALE_Y*32+fixtoi(SCALE_Y*80*fcos(itofix((VBLframe+i*256/c)&255)))+fixtoi(SCALE_Y*30*fsin(itofix((VBLframe*2+i*256*c)&255))));
 
 
-        draw_trans_rle_sprite(buffer,text[4],0,SCREEN_H-28);
+        draw_trans_rle_sprite(buffer,text[4],0,SCREEN_H-28*SCALE_Y);
 
         if (key[KEY_ESC])
             break;
@@ -1600,7 +1405,7 @@ void PartTunnel3d(void)
         {
         }
 
-        draw_trans_rle_sprite(buffer,text[5],0,SCREEN_H-28);
+        draw_trans_rle_sprite(buffer,text[5],0,SCREEN_H-28*SCALE_Y);
 
         if (key[KEY_ESC])
             break;
@@ -1663,9 +1468,9 @@ void PartTunnel3d2(void)
         }
 
         if (GetPosition() < 0x0d00)
-            draw_trans_rle_sprite(buffer,text[5],0,SCREEN_H-28);
+            draw_trans_rle_sprite(buffer,text[5],0,SCREEN_H-28*SCALE_Y);
         else
-            draw_trans_rle_sprite(buffer,text[6],0,SCREEN_H-28);
+            draw_trans_rle_sprite(buffer,text[6],0,SCREEN_H-28*SCALE_Y);
 
         if (key[KEY_ESC])
             break;
@@ -1936,9 +1741,11 @@ int main(int argc, char ** argv)
 {
     char buf[80];
     int refreshRate;
+    int card, w, h;
+    int mode=GFX_AUTODETECT_WINDOWED;
 
-    printf("MindLink (c) KNIGHTS 1997\n");
-    printf("  ( Run with any parameter to run sound setup )\n");
+    printf("MindLink (c) KNIGHTS 1997-2009\n");
+    printf("  mindlink WIDTHxHEIGHT\n");
     printf("  Initializing.\n");
 
     if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE) < 0)
@@ -1947,9 +1754,27 @@ int main(int argc, char ** argv)
         exit(1);
     }
     allegro_init();
+    install_keyboard();
+    install_mouse();
 
-    if (argc>1)
-        mode = GFX_AUTODETECT_FULLSCREEN;
+    // mode = GFX_AUTODETECT_FULLSCREEN;
+
+    if (argc>1) 
+    {
+        int tokens;
+        tokens = sscanf(argv[1], "%dx%d", &w, &h);
+        if (tokens != 2) 
+        {
+            printf("  \"%s\" is not a valid display mode, try '640x480' you douche.\n", argv[1]);
+        }
+        set_gfx_mode(mode, w, h, 0, 0);
+    }
+    else 
+    {
+        set_gfx_mode(mode, 320, 240, 0, 0);
+        gfx_mode_select(&card, &w, &h);
+        set_gfx_mode(card, w,h, 0,0);
+    }
 
     /* load the datafile into memory */
     printf("  UnPacking.");
@@ -1961,7 +1786,6 @@ int main(int argc, char ** argv)
         printf("  Error loading example.dat!\n\n");
         exit(1);
     }
-    install_keyboard();
 
     printf(".");
     fflush(stdout);
@@ -1980,14 +1804,9 @@ int main(int argc, char ** argv)
     SDL_AddTimer(100, MusicUpdate, 0);
     SDL_AddTimer(1000,TimerHandler, 0);
 
-
-    //install_int(MusicUpdate, 100);
-    //install_int(TimerHandler, 1000);
-
     Demo();
 
     MusicStop();
-
 
     /* unload the datafile when we are finished with it */
     unload_datafile(data);
@@ -2006,8 +1825,6 @@ int main(int argc, char ** argv)
     printf("\nMindLink 1.1 (GPL) [%s %s]\n\n", __DATE__, __TIME__);
     printf("                     \n");
     printf("\n");
-
-
 
     return 0;
 }
