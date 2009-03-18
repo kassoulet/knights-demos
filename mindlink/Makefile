@@ -1,7 +1,7 @@
 #CFLAGS = -O0 -g -march=nocona -ffast-math -fomit-frame-pointer -funroll-loops `allegro-config --cflags`
 
-CFLAGS = -O3 -g -march=nocona `allegro-config --cflags` `sdl-config --cflags`
-LDLIBS = -g -lmikmod `allegro-config --libs` `sdl-config --libs`
+CFLAGS = -O3 -march=nocona `allegro-config --cflags` `sdl-config --cflags`
+LDLIBS = -lmikmod `allegro-config --libs` `sdl-config --libs`
 
 
 all : mindlink
@@ -16,3 +16,6 @@ clean :
 
 compress : mindlink
 	upx --best mindlink
+	
+dist : mindlink
+	tar c mindlink mindlink.xm mindlink.dat *.asc | bzip2 > mindlink-linux-x86_64.tar.bz2
