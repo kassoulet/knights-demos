@@ -1,6 +1,8 @@
 #include <mikmod.h>
 #include <stdio.h>
 
+/*
+*/
 
 MODULE *module;
 
@@ -31,6 +33,12 @@ void MusicStart(char *filename)
     md_sndfxvolume = 128;
     md_pansep   = 128;
     md_reverb   = 0;
+
+    md_mode |= DMODE_INTERP;
+    md_mode |= DMODE_HQMIXER;
+    md_mode |= DMODE_16BIT;
+    
+    puts(MikMod_InfoDriver());
 
     MikMod_RegisterAllLoaders();
     MikMod_RegisterAllDrivers();
