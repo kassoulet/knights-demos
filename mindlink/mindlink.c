@@ -21,7 +21,7 @@
 #include <math.h>
 
 #include <SDL.h>
-
+#include "zlib.h"
 #include <allegro.h>
 #include "data.h"
 
@@ -38,12 +38,64 @@ extern void MusicStop();
 extern int MusicUpdate();
 extern void MusicSetPosition(int position);
 
+int quit = 0;
 int GetPosition(void)
 {
-    //if (key[KEY_ESC])
-    //    return 0xffff;
+    if (key[KEY_ESC])
+        quit = 1;
+    if (quit)
+        return 0xffff;
+    if (key[KEY_N])
+        return 0xffff;
     return MusicGetPosition();
 }
+
+BITMAP * buffer;
+DATAFILE *data;
+
+gzFile zDump;
+Uint32 dump_active=0;
+int dump_frame=0;
+int dump_fps=30;
+
+void DumpFrame()
+{
+    char filename[1024];
+    Uint32 ticks, old=0;
+    int delay = 1000/dump_fps;
+    int diff;
+    PALETTE pal;
+    
+    while (dump_active) {
+    
+        do {
+            ticks = SDL_GetTicks();
+            diff = ticks-old;
+            if (diff > delay)
+                printf("frame skip!\n");
+            SDL_Delay(1);
+        } while (diff < delay);     
+        
+        get_palette(pal);
+        sprintf(filename, "dump/%08d.tga", dump_frame);
+        save_bitmap(filename, buffer, pal);
+        dump_frame++;
+        old = ticks;
+    }
+}
+
+void DumpStart()
+{
+    mkdir("dump", 0777);
+    dump_active = 1;
+    SDL_CreateThread(DumpFrame, 0);
+}
+
+void DumpEnd()
+{
+    dump_active = 0;
+}
+
 
 unsigned short *TunnelLookup;
 unsigned short *TunnelLookup2;
@@ -54,8 +106,6 @@ unsigned short *PlasmaLookup2;
 unsigned char *_image;
 unsigned char _map[256*256];
 
-BITMAP * buffer;
-DATAFILE *data;
 
 
 int count;
@@ -120,9 +170,10 @@ void WaitVBL()
 {
     UpdateTimer();
 
-    if (key[KEY_ESC])
-        exit(2);
+    DumpFrame();
 
+    //if (key[KEY_ESC])
+    //    exit(2);
 
     if (key[KEY_SPACE])
     {
@@ -166,6 +217,13 @@ void WaitVBL()
         destroy_bitmap(display);
 
     }
+}
+
+
+void Update()
+{
+    WaitVBL();
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
 }
 
 PALETTE *palWater;
@@ -999,23 +1057,12 @@ void PartInternalBlob(void)
     color_map = tableGlenz;
     set_palette(pal);
     while (GetPosition() < 0x0300)
-
     {
         K3DPlaceObject(&obj, 0, itofix(-50),
                        itofix(50)+70*fsin(itofix((1*VBLframe)&255)),
                        (VBLframe<<14)&0xffffff,
                        (VBLframe<<14)&0xffffff,
                        (VBLframe<<14)&0xffffff);
-
-
-        if (GetPosition() >= 0x0100)
-            texte = data[BMP_lasy].dat;
-        if (GetPosition() >= 0x0200)
-            texte = data[BMP_back].dat;
-        draw_sprite(buffer, texte, 0, 0);
-
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
 
         K3DRotateObject(&obj);
         for (i = 0;i < obj.vertexes;i++)
@@ -1026,8 +1073,13 @@ void PartInternalBlob(void)
         K3DProjectObject(&obj);
         K3DDrawObject(buffer, &obj);
 
-        if (key[KEY_ESC])
-            break;
+        if (GetPosition() >= 0x0100)
+            texte = data[BMP_lasy].dat;
+        if (GetPosition() >= 0x0200)
+            texte = data[BMP_back].dat;
+        draw_sprite(buffer, texte, 10, 10);
+        
+        Update();
     }
     K3DDeleteObject(&obj);
 }
@@ -1804,7 +1856,9 @@ int main(int argc, char ** argv)
     SDL_AddTimer(100, MusicUpdate, 0);
     SDL_AddTimer(1000,TimerHandler, 0);
 
+    DumpStart();
     Demo();
+    DumpEnd();
 
     MusicStop();
 

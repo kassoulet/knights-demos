@@ -1,7 +1,7 @@
 #CFLAGS = -O0 -g -march=nocona -ffast-math -fomit-frame-pointer -funroll-loops `allegro-config --cflags`
 
-CFLAGS = -O3 -march=nocona `allegro-config --cflags` `sdl-config --cflags`
-LDLIBS = -lmikmod `allegro-config --libs` `sdl-config --libs`
+CFLAGS = -O3 -march=nocona `allegro-config --cflags` `sdl-config --cflags` `libmikmod-config --cflags`
+LDLIBS = `allegro-config --libs` `sdl-config --libs` `libmikmod-config --libs`
 
 
 all : mindlink
