@@ -1,0 +1,72 @@
+
+  .Styler.
+             KNIGHTS
+
+  .Code.
+             Impulse
+             -16 Mb-  ? or maybe less...
+  .Music.
+             Logic Dream
+             -Condom-
+  .Gfx.
+             Exocet/JFF
+             Don Vicenzo
+             -Sunglasses-
+  .Midas.
+             HouseMarque
+             -SB/GUS/WSS...-
+
+             !! Apparently MIDAS 1.1.x don't work on the GUS Max & PnP
+             !! So use a Sound Blaster to get sound
+
+  .Allegro.
+             Shawn Hargreaves
+             -VBE 2.0-
+
+  .Billou.
+             Do not run it under windows, it's slower, you don't get correct
+             sync'ing and DO NEVER start it in windowed mode, this will crash
+             your PC to Hell...
+
+             Run _Perfectly_ with a Pentium 100.
+
+             This is the final version.
+             In party version, you must reset if you enter in sound setup.
+             [Sorry. :(]
+
+             we use the allegro 3D engine... Our engine is 4 times faster,
+             but unfinished...
+
+             This demo has no _real_ ending, I'm too lasy, and there was a
+             deadline. :(
+
+  .Volcazer-Evil Maniak.
+             It was nice IRCing with you!! :)
+             I don't like lamers-rippers-liars like you...
+
+  .Special Greets.
+             Babaorum: Keep on coding... It was only your first demo.
+                       there will be many others...
+                       Do you search a group ??? (We want you !!!)
+
+             JFF:      The coolest group. No more to say.
+
+  .100% KNIGHTS.
+             We will soon release:
+              * Many demos !!!!
+              * Milla, a Demo/Presentation-maker for PC
+              * MiND OS, THE librairy.
+
+
+---------------------------------------------------------------------------
+To get in touch with us, you can write to :
+
+  impulse...........................       Eclipse.......................
+        Gautier Portet                          Fabien Germain
+        3, place Ferdinand Buisson              26, rue Louis Pasteur
+        31240 Saint Jean                        76120 Grand-Quevilly
+        - FRANCE -                              - FRANCE -
+      impulse@citeweb.net                     eclipse@citeweb.net
+
+
+                Knights' homepage : http://knights.planet-d.net
