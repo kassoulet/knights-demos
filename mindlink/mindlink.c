@@ -58,7 +58,8 @@ Uint32 dump_active=0;
 int dump_frame=0;
 int dump_fps=30;
 
-void DumpFrame()
+/*
+void DumpFrameThread()
 {
     char filename[1024];
     Uint32 ticks, old=0;
@@ -82,18 +83,54 @@ void DumpFrame()
         dump_frame++;
         old = ticks;
     }
+}*/
+
+gzFile dumpfile;
+
+void _DumpFrame()
+{
+    char filename[1024];
+    char cmd[1024];
+    PALETTE pal;
+    
+    get_palette(pal);
+    sprintf(filename, "dump/%08d.tga", dump_frame);
+    dump_frame++;
+    
+    save_bitmap(filename, screen, pal);
+    
+    //sprintf(cmd, "convert -scale 50%% dump/%08d.tga dump/%08d.png ; rm dump/%08d.tga &", dump_frame, dump_frame, dump_frame);
+    //system(cmd);
+    
+    
+    //fwrite(buffer->dat,  SCREEN_W*SCREEN_H, 1, dumpfile);
+    /*if (buffer && buffer->dat) {
+        gzwrite(dumpfile, pal, sizeof(pal));
+        gzwrite(dumpfile, buffer->dat, SCREEN_W*SCREEN_H);
+    }*/
 }
+
+void DumpFrame()
+{
+    SDL_CreateThread(_DumpFrame, 0);
+}
+
 
 void DumpStart()
 {
     mkdir("dump", 0777);
     dump_active = 1;
-    SDL_CreateThread(DumpFrame, 0);
+    //SDL_CreateThread(DumpFrame, 0);
+    //dumpfile = gzopen("dump/dump.gz", "wb3");
+
+    SDL_AddTimer(20, DumpFrame, 0);
 }
 
 void DumpEnd()
 {
     dump_active = 0;
+    //fclose(dumpfile);
+    //gzclose(dumpfile);
 }
 
 
@@ -927,22 +964,13 @@ void PartTunnel(void)
         DoDeformTable(&tunnelDeform, VBLframe);
         DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe, VBLframe*2, &tunnelDeform);
         draw_trans_rle_sprite(buffer,text[7],0,SCREEN_H-28*SCALE_Y);
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
         tunnelDeform.param[1].phase = 192+VBLframe;
         //    tunnelDeform.param[1].phase=tunnelDeform.table[(2*VBLframe)&255]+VBLframe;
         tunnelDeform.param[2].phase = tunnelDeform.table[VBLframe&255]+VBLframe;
         tunnelDeform.param[3].phase = 274+VBLframe;
 
-        /* if F1 pressed, wait a moment */
-        while (key[KEY_F1])
-        {
-        }
-
-        /* exit if ESC pressed */
-        //    if(key[KEY_ESC])
-        //      break;
+        Update();
     }
 
     tunnelDeform.param[0].amplitude =
@@ -959,13 +987,13 @@ void PartTunnel(void)
         DoDeformTable(&tunnelDeform, VBLframe);
         DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe*0, VBLframe*0, &tunnelDeform);
         draw_trans_rle_sprite(buffer,text[8],0,SCREEN_H-28*SCALE_Y);
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
         tunnelDeform.param[1].phase = 192+VBLframe;
         //    tunnelDeform.param[1].phase=tunnelDeform.table[(2*VBLframe)&255]+VBLframe;
         tunnelDeform.param[2].phase = tunnelDeform.table[VBLframe&255]+VBLframe;
         tunnelDeform.param[3].phase = 274+VBLframe;
+
+        Update();
     }
     tunnelDeform.param[0].freq = 0x20000;
     tunnelDeform.param[1].freq = 0x70000;
@@ -976,14 +1004,13 @@ void PartTunnel(void)
         DoDeformTable(&tunnelDeform, VBLframe);
         DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe, VBLframe*1, &tunnelDeform);
         draw_trans_rle_sprite(buffer,text[9],0,SCREEN_H-28*SCALE_Y);
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
         tunnelDeform.param[1].phase = 192+VBLframe;
         //    tunnelDeform.param[1].phase=tunnelDeform.table[(2*VBLframe)&255]+VBLframe;
         tunnelDeform.param[2].phase = tunnelDeform.table[VBLframe&255]+VBLframe;
         tunnelDeform.param[3].phase = 274+VBLframe;
 
+        Update();
     }
     tunnelDeform.param[0].freq = 0x20000;
     tunnelDeform.param[1].freq = 0x10000;
@@ -994,14 +1021,13 @@ void PartTunnel(void)
         DoDeformTable(&tunnelDeform, VBLframe);
         DrawGlenzTunnel(buffer, TunnelLookup, map, picture, VBLframe, VBLframe*2, &tunnelDeform);
         draw_trans_rle_sprite(buffer,text[10],0,SCREEN_H-28*SCALE_Y);
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
         tunnelDeform.param[1].phase = 192+VBLframe;
         //    tunnelDeform.param[1].phase=tunnelDeform.table[(2*VBLframe)&255]+VBLframe;
         tunnelDeform.param[2].phase = tunnelDeform.table[VBLframe&255]+VBLframe;
         tunnelDeform.param[3].phase = 274+VBLframe;
 
+        Update();
     }
 
     BITMAP *tmp = create_bitmap(SCREEN_W, SCREEN_H);
@@ -1020,13 +1046,12 @@ void PartTunnel(void)
     {
         DoDeformTable(&tunnelDeform, VBLframe);
         DrawGlenzTunnel(buffer, TunnelLookup2, map, picture, VBLframe*2, VBLframe*0, &tunnelDeform);
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
-
         tunnelDeform.param[0].phase = -VBLframe;
         tunnelDeform.param[1].phase = 192+VBLframe;
         tunnelDeform.param[2].phase = 48+VBLframe*2;
         tunnelDeform.param[3].phase = 64-VBLframe;
+
+        Update();
     }
 }
 
@@ -1037,7 +1062,6 @@ void PartInternalBlob(void)
     PALETTE pal;
     int i;
 
-    clear(screen);
     K3DInit();
     K3DInitObject(&obj);
     K3DLoadObjectASC("blob.asc", &obj);
@@ -1082,6 +1106,28 @@ void PartInternalBlob(void)
         Update();
     }
     K3DDeleteObject(&obj);
+    
+
+    fade_out(12);
+    memcpy(pal,data[PAL_kIntro].dat,sizeof(PALETTE));
+    stretch_blit(data[BMP_kIntro].dat, screen, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+
+    fade_in(pal,2);
+    while (GetPosition()<0x0400)
+    {
+        WaitVBL();
+    }
+    fade_out(12);
+    memcpy(pal,data[PAL_mindIntro].dat,sizeof(PALETTE));
+    stretch_blit(data[BMP_mindIntro].dat, screen, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+    //    set_palette(pal);
+    fade_in(pal,2);
+    while (GetPosition()<0x043e)
+    {
+        WaitVBL();
+    }
+    fade_out(12);
+  
 }
 
 void Part2Blob(void)
@@ -1091,7 +1137,6 @@ void Part2Blob(void)
     PALETTE pal;
     int i;
 
-    clear(screen);
     K3DInit();
     K3DInitObject(&obj);
     K3DLoadObjectASC("blob.asc", &obj);
@@ -1119,9 +1164,6 @@ void Part2Blob(void)
                        (VBLframe<<14)&0xffffff,
                        (VBLframe<<14)&0xffffff);
 
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
-        clear(buffer);
         K3DRotateObject(&obj);
         for (i = 0;i < obj.vertexes;i++)
         {
@@ -1177,6 +1219,7 @@ void Part2Blob(void)
 
         if (key[KEY_ESC])
             break;
+        Update();
     }
     K3DDeleteObject(&obj);
 }
@@ -1281,12 +1324,6 @@ void PartWater(void)
         blit(_buffer, buffer, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         draw_trans_sprite(buffer, tortue2, x, (fsin((itofix((10*VBLframe)&255)))/2340)-27);
 
-        WaitVBL();
-        //      vsync();
-
-        // blit into screen
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
-
         // adjust contours
         /*line(old, 0, 0, 319, 0, 0);
         line(old, 0, 0, 0, 199, 0);
@@ -1300,8 +1337,7 @@ void PartWater(void)
         // and calculate it
         DrawWater(_buffer, old);
 
-        if (key[KEY_ESC])
-            break;
+        Update();
     }
 }
 
@@ -1313,7 +1349,6 @@ void PartMetaballs(void)
     PALETTE pal;
     int i,c,x,y;
 
-    clear(screen);
     K3DInit();
     K3DInitObject(&obj);
     K3DLoadObjectASC("k.asc", &obj);
@@ -1364,10 +1399,9 @@ void PartMetaballs(void)
         //                   (VBLframe<<16)&0xffffff);
 
 
-        WaitVBL();
         stretch_blit(buffer, buffer, 0, 0, SCREEN_W, SCREEN_H, 0, 0, (SCREEN_W/4), (SCREEN_H/4));
         rect(buffer, 0, 0, SCREEN_W/4, SCREEN_H/4, 128);
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+        Update();
         blit(back, buffer, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         //    clear(buffer);
         K3DRotateObject(&obj);
@@ -1404,7 +1438,6 @@ void PartTunnel3d(void)
     BITMAP *map,*tv;
     PALETTE pal;
 
-    clear(screen);
     K3DInit();
     K3DInitObject(&obj);
     K3DLoadObjectASC("tunnel.asc", &obj);
@@ -1428,6 +1461,7 @@ void PartTunnel3d(void)
     set_palette(pal);
     while (GetPosition() < 0x0d00)
     {
+        clear(buffer);
         K3DPlaceObject(&obj,
                        0,
                        0,
@@ -1444,9 +1478,6 @@ void PartTunnel3d(void)
         line(buffer, 80*SCALE_X, 0, 80*SCALE_X, SCREEN_H-1, 128);
 
         stretch_blit(buffer, tv, 0, 0, SCREEN_W, SCREEN_H, 0, 0, (SCREEN_W/4), (SCREEN_H/4));
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
-        clear(buffer);
         K3DRotateObject(&obj);
         K3DProjectObject(&obj);
         //    K3DEnvMapObject(&obj);
@@ -1459,8 +1490,7 @@ void PartTunnel3d(void)
 
         draw_trans_rle_sprite(buffer,text[5],0,SCREEN_H-28*SCALE_Y);
 
-        if (key[KEY_ESC])
-            break;
+        Update();
     }
     K3DDeleteObject(&obj);
 }
@@ -1472,7 +1502,6 @@ void PartTunnel3d2(void)
     PALETTE pal;
     int i;
 
-    clear(screen);
     K3DInit();
     K3DInitObject(&obj);
     K3DLoadObjectASC("tube.asc", &obj);
@@ -1495,8 +1524,6 @@ void PartTunnel3d2(void)
     set_palette(pal);
     while (GetPosition() < 0x0f00)
     {
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         clear(buffer);
 
         for (i = 4;i >= 0;i--)
@@ -1515,17 +1542,13 @@ void PartTunnel3d2(void)
 
             K3DDrawObject(buffer, &obj);
         }
-        while (key[KEY_F1])
-        {
-        }
 
         if (GetPosition() < 0x0d00)
             draw_trans_rle_sprite(buffer,text[5],0,SCREEN_H-28*SCALE_Y);
         else
             draw_trans_rle_sprite(buffer,text[6],0,SCREEN_H-28*SCALE_Y);
 
-        if (key[KEY_ESC])
-            break;
+        Update();
     }
     K3DDeleteObject(&obj);
 }
@@ -1567,13 +1590,11 @@ void PartPlasma(void)
         DrawGlenzTunnel(buffer, PlasmaLookup, map, picture,
                         tunnelDeform.table[(VBLframe+194)&255],
                         tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
         tunnelDeform.param[1].phase = tunnelDeform.table[(5*VBLframe)&255];
         tunnelDeform.param[2].phase = tunnelDeform.table[VBLframe&255]+VBLframe;
         tunnelDeform.param[3].phase = 192+VBLframe;
-
+        Update();
     }
     tunnelDeform.param[0].freq = 0x10000;
     tunnelDeform.param[1].freq = 0x20000;
@@ -1585,13 +1606,12 @@ void PartPlasma(void)
         DrawGlenzTunnel(buffer, PlasmaLookup, map, picture,
                         tunnelDeform.table[(VBLframe+194)&255],
                         tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
         tunnelDeform.param[1].phase = tunnelDeform.table[(2*VBLframe)&255];
         tunnelDeform.param[2].phase = tunnelDeform.table[VBLframe&255]+VBLframe;
         tunnelDeform.param[3].phase = 274+VBLframe;
 
+        Update();
     }
     while (GetPosition() < 0x1a00)
     {
@@ -1599,12 +1619,11 @@ void PartPlasma(void)
         DrawGlenzTunnel(buffer, PlasmaLookup2, map, picture,
                         tunnelDeform.table[(VBLframe+194)&255],
                         tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
         tunnelDeform.param[1].phase = tunnelDeform.table[(2*VBLframe)&255];
         tunnelDeform.param[2].phase = VBLframe;
         tunnelDeform.param[3].phase = 274+VBLframe;
+        Update();
     }
     tunnelDeform.param[3].freq = 0x30000;
     while (GetPosition() < 0x1c00)
@@ -1613,12 +1632,11 @@ void PartPlasma(void)
         DrawGlenzTunnel(buffer, PlasmaLookup, map, picture,
                         tunnelDeform.table[(VBLframe+194)&255],
                         tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
         tunnelDeform.param[1].phase = tunnelDeform.table[(2*VBLframe)&255];
         tunnelDeform.param[2].phase = VBLframe;
         tunnelDeform.param[3].phase = 274+VBLframe;
+        Update();
     }
     for (i = 0;i < SCREEN_W*SCREEN_H;i++)
         *(unsigned char*)(_image+i) = 70+*((unsigned char*)(overlay->dat+i))/2;
@@ -1628,12 +1646,11 @@ void PartPlasma(void)
         DrawGlenzTunnel(buffer, PlasmaLookup2, map, picture,
                         tunnelDeform.table[(VBLframe+194)&255],
                         tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
-        WaitVBL();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
         tunnelDeform.param[1].phase = tunnelDeform.table[(2*VBLframe)&255];
         tunnelDeform.param[2].phase = VBLframe;
         tunnelDeform.param[3].phase = 274+VBLframe;
+        Update();
     }
     fade=0;
     while (GetPosition() < 0x1e00)
@@ -1642,18 +1659,17 @@ void PartPlasma(void)
         DrawGlenzTunnel(buffer, PlasmaLookup, map, picture,
                         tunnelDeform.table[(VBLframe+194)&255],
                         tunnelDeform.table[(2*VBLframe)&255], &tunnelDeform);
-        WaitVBL();
         if (fade<64*3)
             fade_interpolate(begin, black, pal, fade/3, 0, 255);
         //vsync();
         fade++;
         set_palette(pal);
 
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         tunnelDeform.param[0].phase = 64+VBLframe;
         tunnelDeform.param[1].phase = tunnelDeform.table[(2*VBLframe)&255];
         tunnelDeform.param[2].phase = VBLframe;
         tunnelDeform.param[3].phase = 274+VBLframe;
+        Update();
     }
 
 }
@@ -1699,8 +1715,7 @@ void PartEnd(void)
     while (pos > -1000)   // for(i=VBLframe; i<800*2; i=VBLframe)
     {
         pos -= delta;
-        WaitVBL();
-        blit(buffer,screen,0,0,0,0,SCREEN_W,SCREEN_H);
+        Update();
         blit(back,buffer,0,0,0,0,SCREEN_W,SCREEN_H);
 
         K3DPlaceObject(&obj,itofix(250)+100*fsin(itofix(VBLframe&255)),itofix((VBLframe&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
@@ -1717,10 +1732,9 @@ void PartEnd(void)
     for (i=0;i<64*2;i++)
     {
         fade_interpolate(data[PAL_glenz1].dat, black, pal, i/2, 0, 255);
-        WaitVBL();
+        Update();
         vsync();
         set_palette(pal);
-        blit(buffer,screen,0,0,0,0,SCREEN_W,SCREEN_H);
         blit(end,buffer,0,0,0,0,SCREEN_W,SCREEN_H);
 
         K3DPlaceObject(&obj,itofix(250)+100*fsin(itofix(VBLframe&255)),itofix(((VBLframe)&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
@@ -1741,50 +1755,15 @@ void Demo(void)
     //set_gfx_mode(mode, 320, 200, 0, 0);
     buffer = create_bitmap(SCREEN_W, SCREEN_H);
 
-
     PartInternalBlob();
-
-
-    {
-        PALETTE pal;
-        fade_out(12);
-        memcpy(pal,data[PAL_kIntro].dat,sizeof(PALETTE));
-        stretch_blit(data[BMP_kIntro].dat, screen, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
-
-        fade_in(pal,2);
-        while (GetPosition()<0x0400)
-        {
-            WaitVBL();
-        }
-        fade_out(12);
-        memcpy(pal,data[PAL_mindIntro].dat,sizeof(PALETTE));
-        stretch_blit(data[BMP_mindIntro].dat, screen, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
-        //    set_palette(pal);
-        fade_in(pal,2);
-        while (GetPosition()<0x043e)
-        {
-            WaitVBL();
-        }
-        fade_out(12);
-    }
-
-
     Part2Blob();
-
     PartMetaballs();
-
     PartTunnel3d();
-
     PartTunnel3d2();
-
     PartTunnel();
-
     PartWater();
-
     PartPlasma();
-
     PartEnd();
-
 }
 
 
@@ -1856,6 +1835,7 @@ int main(int argc, char ** argv)
     SDL_AddTimer(100, MusicUpdate, 0);
     SDL_AddTimer(1000,TimerHandler, 0);
 
+
     DumpStart();
     Demo();
     DumpEnd();
@@ -1879,6 +1859,9 @@ int main(int argc, char ** argv)
     printf("\nMindLink 1.1 (GPL) [%s %s]\n\n", __DATE__, __TIME__);
     printf("                     \n");
     printf("\n");
+
+
+    //system("mencoder "mf://*.jpg" -mf fps=10 -o test.avi -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=800");
 
     return 0;
 }
