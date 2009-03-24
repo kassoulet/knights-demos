@@ -22,23 +22,32 @@
 #include "k3d.h"
 #include "effects.h"
 
-
-// undefine MUSIC not to link with MIDAS
-
-#define USE_JGMOD
-
-#ifdef USE_JGMOD
-#include <jgmod.h>
-JGMOD *module;
-#endif
+int SCREEN_WIDTH = 1280;
+int SCREEN_HEIGHT= 800;
 
 int mode=GFX_AUTODETECT_WINDOWED;
 // globals
 
+extern int MusicGetPosition(void);
+extern void MusicStart(char *filename);
+extern void MusicStop();
+extern int MusicUpdate();
+extern void MusicSetPosition(int position);
+
+int quit = 0;
+int GetPosition(void)
+{
+    if (key[KEY_ESC])
+        quit = 1;
+    if (quit)
+        return 0xffff;
+    if (key[KEY_N])
+        return 0xffff;
+    return MusicGetPosition();
+}
+
 BITMAP * buffer;
-
 DATAFILE *data;
-
 
 int VBLframe,VBLfps,VBLcount,VBLold;
 int refreshRate;
@@ -115,20 +124,6 @@ void WaitVBL()
   }
   
 }
-
-int GetPosition(void)
-{
-  if(key[KEY_F1])
-    return 0xffff;
-
-#ifdef USE_JGMOD
-	return mi.trk*256+mi.pos;
-#endif
-  
-}
-
-
-
 
 void InitDemo(void)
 {
@@ -484,7 +479,7 @@ void PartGlenzCube(void)
     
     while(key[KEY_F1])
     {
-      }
+    }
     
     if(key[KEY_ESC])
       return;
