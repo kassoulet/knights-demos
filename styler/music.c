@@ -37,13 +37,13 @@ void MusicStart(char *filename)
     md_mode |= DMODE_INTERP;
     md_mode |= DMODE_HQMIXER;
     md_mode |= DMODE_16BITS;
-    
+
 
     MikMod_RegisterAllLoaders();
     MikMod_RegisterAllDrivers();
 
     //puts(MikMod_InfoDriver());
-    
+
 
 
     MikMod_Init(NULL);
