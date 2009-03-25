@@ -55,7 +55,8 @@ void MusicStart(char *filename)
         return;
     }
     Player_Start(module);
-    module->loop = 1; // allows module to loop at the end.
+    module->loop = 0; // allows module to loop at the end.
+    
 }
 
 

@@ -21,9 +21,13 @@
 #include "styler.h"
 #include "k3d.h"
 #include "effects.h"
+#include <SDL.h>
 
-int SCREEN_WIDTH = 1280;
-int SCREEN_HEIGHT= 800;
+int SCREEN_WIDTH = 640;
+int SCREEN_HEIGHT= 400;
+
+float SCALE_X;
+float SCALE_Y;
 
 int mode=GFX_AUTODETECT_WINDOWED;
 // globals
@@ -63,13 +67,13 @@ K3DTObject city;
 K3DTObject bizar;
 K3DTObject bizar2;
 
-unsigned short lookupDeep[320*200];
-unsigned short lookupFlat[320*200];
-unsigned short lookupDeep2[320*200];
-unsigned short lookupFlat2[320*200];
+unsigned short *lookupDeep;
+unsigned short *lookupFlat;
+unsigned short *lookupDeep2;
+unsigned short *lookupFlat2;
 
 RLE_SPRITE * counter[10];
-PALETTE head;
+PALETTE head_pal;
 
 void Fatal(char* str)
 {
@@ -77,7 +81,7 @@ void Fatal(char* str)
     exit(0);
 }
 
-
+/*
 
 void TimerHandler(void);
 
@@ -88,10 +92,7 @@ void TimerHandler(void)
     VBLcount = 0;
 }
 
-void DrawCounter(void)
-{
-    draw_trans_rle_sprite(buffer, counter[(VBLframe/3)%9], 319-92, 0);
-}
+
 
 void WaitVBL()
 {
@@ -124,10 +125,123 @@ void WaitVBL()
     }
 
 }
+*/
+
+Uint32 TimerHandler(Uint32 interval, void *param)
+{
+    VBLfps = VBLcount;
+    VBLcount = 0;
+    //printf("fps: %d\n", VBLfps);
+    return interval;
+}
+
+Uint32 TimerHandler2(Uint32 interval, void *param)
+{
+    VBLframe++;
+    return interval;
+}
+static Uint32 fps_count=0;
+static Uint32 fps_frames=0;
+Uint32 ticks=0;
+double delta;
+Uint32 frames=0;
+double timer=0;
+double oldTicks=0;
+double fps;
+
+static void UpdateTimer()
+{
+    Uint32 diff;
+    ticks = SDL_GetTicks();
+    diff = (ticks-oldTicks);
+
+    fps_count += diff;
+    fps_frames++;
+    if (fps_count > 1000)
+    {
+        fps = fps_frames * fps_count / 1000.0;
+        fps_count = fps_frames = 0;
+    }
+
+    /* we interpolate delta to get a smooth movement */
+    delta = delta*0.5 + (diff/20.0)*0.5;
+
+    frames++;
+    VBLcount++;
+    timer+=delta;
+
+    VBLframe = timer;
+    //VBLdelta = delta;
+    //fVBLdelta= delta;
+    oldTicks = ticks;
+}
+
+void WaitVBL()
+{
+    UpdateTimer();
+    
+    if (key[KEY_SPACE])
+    {
+        BITMAP * display;
+        char buf[16];
+        int i,j;
+
+        if (key[KEY_P])
+        {
+            //
+            // save_bitmap("dump.tga", buffer, pal);
+        }
+
+        display = create_bitmap(8*16, 10);
+        clear_to_color(display, 0);
+
+        buf[0] = 0;
+        if ( fps > 10000 || fps < 0)
+        {
+            strcpy(buf, "error");
+        }
+        else
+        {
+            sprintf(buf, "%.2f FPS", fps);
+        }
+        i = 8*16*2*fps/70;
+        if (i >= 8*16-1)
+            i = 8*16-2;
+        drawing_mode(DRAW_MODE_SOLID, NULL, 0, 0);
+
+        for (j=1;j<=i;j++)
+        {
+            vline(display, j, 0, 8, 63);
+        }
+
+        text_mode(-1);
+        textout(display, font, buf, 1, 1, makecol(250,250,250));
+
+        blit(display, buffer, 0, 0, 0, 0, 8*16, 9);
+
+        destroy_bitmap(display);
+
+    }    
+}
+
+void DrawCounter(void)
+{
+    draw_trans_rle_sprite(buffer, counter[(VBLframe/3)%9], SCREEN_W-1-92, 0);
+}
+
+void Update()
+{
+    WaitVBL();
+    blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+}
 
 void InitDemo(void)
 {
     int i;
+    PALETTE pal;
+
+    SCALE_X = SCREEN_W/320.0;
+    SCALE_Y = SCREEN_H/200.0;    
 
     counter[0] = data[Bn0].dat;
     counter[1] = data[Bn1].dat;
@@ -140,23 +254,16 @@ void InitDemo(void)
     counter[8] = data[Bn8].dat;
     counter[9] = data[Bn9].dat;
 
+    memcpy(pal, data[Phead].dat, sizeof (pal));
+    for (i = 0;i < 128;i++)
     {
-        PALETTE pal;
-
-        memcpy(pal, data[Phead].dat, sizeof (pal));
-        for (i = 0;i < 128;i++)
-        {
-            head[i].r = pal[i].r;
-            head[i].g = pal[i].g;
-            head[i].b = pal[i].b;
-            head[i+128].r = pal[i+128].b;
-            head[i+128].g = pal[i+128].r;
-            head[i+128].b = pal[i+128].g;
-        }
+        head_pal[i].r = pal[i].r;
+        head_pal[i].g = pal[i].g;
+        head_pal[i].b = pal[i].b;
+        head_pal[i+128].r = pal[i+128].b;
+        head_pal[i+128].g = pal[i+128].r;
+        head_pal[i+128].b = pal[i+128].g;
     }
-
-
-
 
     for (i = 0xffff;i >= 0;i--)
     {
@@ -216,6 +323,11 @@ void InitDemo(void)
     printf(".");
     fflush(stdout);
 
+	lookupDeep = (unsigned short*) malloc(SCREEN_H*SCREEN_W*sizeof(unsigned short));
+	lookupFlat = (unsigned short*) malloc(SCREEN_H*SCREEN_W*sizeof(unsigned short));
+	lookupDeep2 = (unsigned short*) malloc(SCREEN_H*SCREEN_W*sizeof(unsigned short));
+	lookupFlat2 = (unsigned short*) malloc(SCREEN_H*SCREEN_W*sizeof(unsigned short));
+
     CalcTunnelLookup(lookupDeep, 1, 1);
     printf(".");
     fflush(stdout);
@@ -233,9 +345,38 @@ void InitDemo(void)
     fflush(stdout);
 
     SetTunnelMap(data[BmapTunnel].dat, data[Bback1].dat);
-
+    
+    K3DInitObject(&cube);
+    K3DInitObject(&patate);
+    K3DInitObject(&aim);
+    K3DInitObject(&city);
+    K3DInitObject(&bizar);
+    K3DInitObject(&bizar2);
+    K3DLoadObjectASC("world.asc", &city);
+    K3DLoadObjectASC("cube.asc", &cube);
+    K3DLoadObjectASC("patate.asc", &patate);
+    K3DLoadObjectASC("bizar2.asc", &bizar);
+    K3DLoadObjectASC("bizar.asc", &bizar2);
+    InitAim(&aim);
 }
 
+RLE_SPRITE *stretch_rle(RLE_SPRITE *rle)
+{
+    BITMAP *tmp;
+    BITMAP *tmp2;
+	RLE_SPRITE *dest;
+    int i;
+
+    tmp = create_bitmap(320,200);
+    tmp2 = create_bitmap(SCREEN_W, SCREEN_H);
+    clear(tmp);
+    draw_rle_sprite(tmp, rle, 0, 0);
+    stretch_blit(tmp, tmp2, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+	dest = get_rle_sprite(tmp2);
+	destroy_bitmap(tmp);
+	destroy_bitmap(tmp2);
+	return dest;
+}
 
 // Draws some blobs onto an image
 void PartParticles(void)
@@ -243,15 +384,17 @@ void PartParticles(void)
 #define NumBlobs 255
 #define IncBlob 2
 
-    BITMAP * image,*lum;
+    BITMAP *image,*lum,*plasma;
     BITMAP* ball;
     int i;
     TDeformTable deform;
+    int position;
 
     ball = create_bitmap(16, 16);
-    lum = create_bitmap(320, 200);
+    lum = create_bitmap(SCREEN_W, SCREEN_H);
+    plasma = create_bitmap(320, 200);
 
-    image = data[Bback1].dat;
+    image = create_bitmap(SCREEN_W, SCREEN_H);; //data[Bback1].dat;
     set_palette(data[Pstyler].dat);
 
     clear(ball);
@@ -281,12 +424,21 @@ void PartParticles(void)
 
     while (GetPosition() < 0x0b00)
     {
-        WaitVBL();
         color_map = &tableGlenz1;
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
 
         clear_to_color(lum, 127+fixtoi(127*fsin(VBLframe<<16)));
+
+		position = GetPosition();
+        if (position == 0x0900 ||
+        	position == 0x0906 ||
+        	position == 0x0910 ||
+        	position == 0x0916 ||
+        	position == 0x0920 ||
+        	position == 0x0926 ||
+        	position == 0x0930 ||
+        	position == 0x0936 ) {
+		        clear_to_color(lum, 255);
+        	}
 
         color_map = &tableBalls;
 
@@ -299,82 +451,44 @@ void PartParticles(void)
 
         for (i = 0;i <= NumBlobs;i += IncBlob)
             draw_trans_sprite(lum, ball,
-                              fixtoi(itofix(160-8)+160*deform.table[i]*fcos(itofix(i))/256),
-                              fixtoi(itofix(100-8)+100*deform.table[i]*fsin(itofix(i))/256)
+                              fixtoi(itofix(SCREEN_W/2-8)+SCREEN_W/2*deform.table[i]*fcos(itofix(i))/256),
+                              fixtoi(itofix(SCREEN_H/2-8)+SCREEN_H/2*deform.table[i]*fsin(itofix(i))/256)
                              );
 
         for (i = 0;i <= NumBlobs;i += IncBlob)
             draw_trans_sprite(lum, ball,
-                              fixtoi(itofix(160-8)+80*deform.table[(-i)&255]*fcos(itofix(i))/256),
-                              fixtoi(itofix(100-8)+50*deform.table[(-i)&255]*fsin(itofix(i))/256)
+                              fixtoi(itofix(SCREEN_W/2-8)+SCREEN_W/4*deform.table[(-i)&255]*fcos(itofix(i))/256),
+                              fixtoi(itofix(SCREEN_H/2-8)+SCREEN_H/4*deform.table[(-i)&255]*fsin(itofix(i))/256)
                              );
 
         if (GetPosition() < 0x0900)
-            DrawPlasma(image, data[Bplasma].dat, VBLframe, 0, 0);
+            DrawPlasma(plasma, data[Bplasma].dat, VBLframe, 0, 0);
         else
             if (GetPosition() < 0x0A00)
-                DrawPlasma(image, data[Bplasma].dat, 2*VBLframe, 255, 0);
+                DrawPlasma(plasma, data[Bplasma].dat, 2*VBLframe, 255, 0);
             else
-                DrawPlasma(image, data[Bplasma].dat, 2*VBLframe, 255, 1);
+                DrawPlasma(plasma, data[Bplasma].dat, 2*VBLframe, 255, 1);
 
+		stretch_blit(plasma, image, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
         color_map = &light1;
 
-
         {
-            int n=320*200-1;
+            int n = SCREEN_W*SCREEN_H;
             unsigned char *S,*D,*d,*b;
             S=(unsigned char *)image->dat;
             D=(unsigned char *)buffer->dat;
             d=(unsigned char *)lum->dat;
             b=(unsigned char *)color_map->data;
 
-            while (n>0) {
-                *D++=b[(*d++)+(*S++)*256];
-                n--;
+            while (--n>=0) {
+                *D++ = b[(*d++) + (*S++)*256];
             }
-
-
         }
-        /*
-         asm("
-           xorl %%eax,%%eax
 
-           mergeLum_loop:
-           movb (%%edx),%%al
-           incl  %%edx
-           movb (%%esi),%%ah
-           incl  %%esi
-           movb (%%ebx,%%eax),%%al
-           movb %%al,(%%edi)
-           incl  %%edi
-
-           decl %%ecx
-           jnz mergeLum_loop
-
-           "
-           :
-         :"S" (image->dat), "D" (buffer->dat), "d" (lum->dat), "c"(320*200-1), "b"(color_map->data)
-           :"eax", "ebx", "ecx", "edx", "esi", "edi");
-         */
         color_map = &tableGlenz1;
-        if (GetPosition() == 0x0900)
-            draw_trans_rle_sprite(buffer, data[Beclair].dat, 0, 0);
-        if (GetPosition() == 0x0906)
-            draw_trans_rle_sprite(buffer, data[Beclair].dat, 0, 0);
-        if (GetPosition() == 0x0910)
-            draw_trans_rle_sprite(buffer, data[Beclair].dat, 0, 0);
-        if (GetPosition() == 0x0916)
-            draw_trans_rle_sprite(buffer, data[Beclair].dat, 0, 0);
-        if (GetPosition() == 0x0920)
-            draw_trans_rle_sprite(buffer, data[Beclair].dat, 0, 0);
-        if (GetPosition() == 0x0926)
-            draw_trans_rle_sprite(buffer, data[Beclair].dat, 0, 0);
-        if (GetPosition() == 0x0930)
-            draw_trans_rle_sprite(buffer, data[Beclair].dat, 0, 0);
-        if (GetPosition() == 0x0936)
-            draw_trans_rle_sprite(buffer, data[Beclair].dat, 0, 0);
 
-
+        DrawCounter();
+        Update();
 
         while (key[KEY_F1])
         {
@@ -384,34 +498,6 @@ void PartParticles(void)
             return;
     }
 
-
-    /*
-    draw_trans_sprite(lum,ball,
-    fixtoi(itofix(160-8)+
-    80*fcos(itofix(VBLframe*i/4096))+
-    80*fcos(itofix(VBLframe/4+i))),
-
-    fixtoi(itofix(100-8)+
-    50*fcos(itofix(VBLframe-i/4))+
-    50*fsin(itofix(VBLframe*i/1024))));
-
-
-    {
-    unsigned char * dest,*src,*intensity;
-
-    dest      = buffer->dat;
-    src       = image->dat;
-    intensity = lum->dat;
-
-    for (i=320*200;i>0;i--)
-    {
-    *dest = color_map->data[*intensity][*src];
-    dest++;
-    src++;
-    intensity++;
-    }
-    }
-    */
 }
 
 
@@ -493,10 +579,29 @@ void PartGlenzCube(void)
 void PartTitle(void)
 {
     PALETTE black,pal;
-//  BITMAP *buffer;
+    BITMAP *tmp;
+    BITMAP *tmp2;
+	RLE_SPRITE *philo1,*philo2,*philo3,*title;
     int i;
 
-//  buffer = create_bitmap(320,200);
+    tmp = create_bitmap(320,200);
+    tmp2 = create_bitmap(SCREEN_W, SCREEN_H);
+    
+    draw_rle_sprite(tmp, data[Bphilo1].dat, 0, 0);
+    stretch_blit(tmp, tmp2, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+	philo1 = get_rle_sprite(tmp2);
+    clear(tmp);
+    draw_rle_sprite(tmp, data[Bphilo2].dat, 0, 0);
+    stretch_blit(tmp, tmp2, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+	philo2 = get_rle_sprite(tmp2);
+    clear(tmp);
+    draw_rle_sprite(tmp, data[Bphilo3].dat, 0, 0);
+    stretch_blit(tmp, tmp2, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+	philo3 = get_rle_sprite(tmp2);
+    clear(tmp);
+    draw_rle_sprite(tmp, data[Btitle].dat, 0, 0);
+    stretch_blit(tmp, tmp2, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+	title = get_rle_sprite(tmp2);
 
     for (i = 0;i < 256;i++)
     {
@@ -524,16 +629,16 @@ void PartTitle(void)
         }
 
         if ((GetPosition() >= 0x0500) && (GetPosition() < 0x0520))
-            draw_trans_rle_sprite(buffer, data[Bphilo1].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, philo1, 0, 0);
 
         if ((GetPosition() >= 0x0520) && (GetPosition() < 0x0600))
-            draw_trans_rle_sprite(buffer, data[Bphilo2].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, philo2, 0, 0);
 
         if ((GetPosition() >= 0x0600) && (GetPosition() < 0x0700))
-            draw_trans_rle_sprite(buffer, data[Bphilo3].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, philo3, 0, 0);
 
         if ((GetPosition() >= 0x0700))
-            draw_trans_rle_sprite(buffer, data[Btitle].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, title, 0, 0);
 
         if (key[KEY_ESC])
             return;
@@ -545,19 +650,15 @@ void PartCredits()
 {
     RLE_SPRITE *name;
     RLE_SPRITE *work;
-    RLE_SPRITE *img;
-    BITMAP *buffer640;
+    //RLE_SPRITE *img;
     PALETTE black,pal;
     int i;
     int people = 1,pause = 1;
 
-    buffer640 = create_bitmap(640, 480);
-
-    img = data[Blogo].dat;
+    //img = data[Blogo].dat;
     set_palette(data[Plogo].dat);
 
-    set_projection_viewport(320, 240, 320, 240);
-    set_projection_viewport(0, 0, 640, 480);
+    set_projection_viewport(0, 0, SCREEN_W, SCREEN_H);
     K3DSetObjectRendering(&aim, FLAT, QSORT, Z);
     K3DPlaceObject(&aim, 0, 0, itofix(100), 0, 0, 0);
 
@@ -569,28 +670,28 @@ void PartCredits()
         black[i].r = black[i].g = black[i].b = 0;
     }
     set_palette(black);
-    draw_rle_sprite(buffer640, img, 0, 0);
-    draw_rle_sprite(screen, img, 0, 0);
+
+    stretch_blit(data[Blogo].dat, buffer, 0, 40, 640, 400, 0, 0, SCREEN_W, SCREEN_H);
+	Update();
+ 
     for (i = 0;i < 63;i++)
     {
         fade_interpolate(black, data[Plogo].dat, pal, i, 0, 255);
         vsync();
+		Update();
         set_palette(pal);
     }
-
     name = data[Bimpulse].dat;
     work = data[Bcode].dat;
 
     while (GetPosition() < 0x0200)
     {
+  		Update();
     }
 
     while (GetPosition() < 0x0330)
     {
-        WaitVBL();
-
-        blit(buffer640, screen, 0, 0, 0, 0, 640 , 480);
-        draw_rle_sprite(buffer640, img, 0, 0);
+        stretch_blit(data[Blogo].dat, buffer, 0, 40, 640, 400, 0, 0, SCREEN_W, SCREEN_H);
 
         if ((GetPosition()&255) < 5)
         {
@@ -625,23 +726,27 @@ void PartCredits()
         }
 
 
-        draw_rle_sprite(buffer640, work, 0, 0);
-        draw_rle_sprite(buffer640, name, 285, 185);
+        draw_rle_sprite(buffer, work, 0, 0);
+        draw_rle_sprite(buffer, name, SCREEN_W/2-160, SCREEN_H/2-100);
 
-        K3DPlaceObject(&aim, itofix(100), itofix(40), itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+0)<<16);
-        K3DRenderObject(buffer640, &aim);
-        K3DPlaceObject(&aim, itofix(100), itofix(40), itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+64)<<16);
-        K3DRenderObject(buffer640, &aim);
-        K3DPlaceObject(&aim, itofix(100), itofix(40), itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+128)<<16);
-        K3DRenderObject(buffer640, &aim);
-        K3DPlaceObject(&aim, itofix(100), itofix(40), itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+192)<<16);
-        K3DRenderObject(buffer640, &aim);
+        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+0)<<16);
+        K3DRenderObject(buffer, &aim);
+        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+64)<<16);
+        K3DRenderObject(buffer, &aim);
+        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+128)<<16);
+        K3DRenderObject(buffer, &aim);
+        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+192)<<16);
+        K3DRenderObject(buffer, &aim);
+
 
         if (key[KEY_ESC])
             return;
+
+		Update();
     }
 
-    draw_rle_sprite(screen, img, 0, 0);
+    stretch_blit(data[Blogo].dat, buffer, 0, 40, 640, 400, 0, 0, SCREEN_W, SCREEN_H);
+    Update();
     for (i = 63;i > 0;i--)
     {
         fade_interpolate(black, data[Plogo].dat, pal, i, 0, 255);
@@ -651,15 +756,17 @@ void PartCredits()
 
     while (GetPosition() < 0x0420)
     {
+	    Update();
     }
-
-    destroy_bitmap(buffer640);
 }
 
 void PartTunnel(void)
 {
     TDeformTable deform;
 
+	RLE_SPRITE *greets1, *greets2;
+	greets1 = stretch_rle(data[Bgreets1].dat);
+	greets2 = stretch_rle(data[Bgreets2].dat);
 
     set_palette(data[Pstyler].dat);
     deform.param[0].freq = 0x10000;
@@ -667,24 +774,15 @@ void PartTunnel(void)
     deform.param[2].freq = 0x10000;
     deform.param[3].freq = 0x10000;
 
-    set_projection_viewport(0, 0, 320, 200);
+    set_projection_viewport(0, 0, SCREEN_W, SCREEN_H);
     K3DSetObjectRendering(&aim, FLAT, NONE, Z);
-
 
     color_map = &tableGlenz1;
 
     while (GetPosition() < 0x0d00)
     {
-        WaitVBL();
         color_map = &tableGlenz1;
-
-
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
-
-
         DoDeformTable(&deform, 0*VBLframe);
-
 
         if (GetPosition() > 0x0c00)
         {
@@ -698,27 +796,23 @@ void PartTunnel(void)
             deform.param[3].phase = VBLframe/4;
         }
 
-
         DrawTunnel(buffer, lookupDeep2, VBLframe, 3*VBLframe, &deform);
         color_map = &tableGlenz1;
         if (GetPosition() > 0x0c00)
         {
             if (GetPosition()&8)
-                draw_trans_rle_sprite(buffer, data[Bgreets1].dat, 0, 0);
+                draw_trans_rle_sprite(buffer, greets1, 0, 0);
             else
-                draw_trans_rle_sprite(buffer, data[Bgreets2].dat, 0, 0);
+                draw_trans_rle_sprite(buffer, greets2, 0, 0);
         }
+        DrawCounter();
+        Update();
     }
 
     drawing_mode(DRAW_MODE_TRANS, 0, 0, 0);
 
     while (GetPosition() < 0x0e00)
     {
-        WaitVBL();
-        color_map = &tableGlenz1;
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
-
         color_map = &tableGlenz3;
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         DoDeformTable(&deform, VBLframe);
@@ -753,6 +847,8 @@ void PartTunnel(void)
         K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fsin(itofix(2*VBLframe+128)), 0, 0, (VBLframe+192+32)<<16);
         K3DRenderObject(buffer, &aim);
 
+        DrawCounter();
+		Update();
     }
 }
 
@@ -778,7 +874,7 @@ void PartVertexPlasma(void)
 
     set_palette(data[Pmask].dat);
 
-    set_projection_viewport(0, 0, 320, 200);
+    set_projection_viewport(0, 0, SCREEN_W, SCREEN_H);
     K3DSetObjectRendering(&patate, TEXTURE, QSORT, Z);
     K3DSetObjectMap(&patate, map);
     K3DPlaceObject(&patate, 0, 0, itofix(400), 0, 0, 0);
@@ -807,10 +903,7 @@ void PartVertexPlasma(void)
 
     while (GetPosition() < 0x1000)
     {
-        WaitVBL();
         color_map = &tableGlenz1;
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
 
         DoDeformTable(&deform, 0*VBLframe);
         deform.param[0].phase = 1*VBLframe;
@@ -859,6 +952,9 @@ void PartVertexPlasma(void)
             K3DBackFaceObject(&patate);
 
         K3DDrawObject(buffer, &patate);
+        
+        DrawCounter();
+        Update();
     }
 
     correct = VBLframe;
@@ -866,10 +962,6 @@ void PartVertexPlasma(void)
     while (GetPosition() < 0x1100)
     {
         int seuil;
-
-        WaitVBL();
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
 
         DoDeformTable(&deform, 0*VBLframe);
         deform.param[0].phase = 1*VBLframe;
@@ -891,6 +983,9 @@ void PartVertexPlasma(void)
                 *((unsigned char*)((BITMAP*)map)->dat+i) = 0;
         }
         K3DDrawObject(buffer, &cube);
+        
+        DrawCounter();
+        Update();
     }
 
 }
@@ -905,7 +1000,7 @@ void PartPulseCube(void)
 
     set_palette(data[Pstyler].dat);
 
-    set_projection_viewport(0, 0, 320, 200);
+    set_projection_viewport(0, 0, SCREEN_W, SCREEN_H);
 
     K3DSetObjectRendering(&cube, TEXTURE, QSORT, Z);
     K3DSetObjectMap(&cube, data[Bmap256c].dat);
@@ -926,10 +1021,8 @@ void PartPulseCube(void)
 
     while (GetPosition() < 0x1300)
     {
-        WaitVBL();
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz1;
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
 
         DeformBitmapScroll(buffer, img, deform, 150+fixtoi(150*fsin(itofix(VBLframe)))
                            , 90+fixtoi(90*fcos(itofix(3*VBLframe)))
@@ -939,7 +1032,7 @@ void PartPulseCube(void)
         if (GetPosition() >= 0x1200)
         {
             set_projection_viewport(fixtoi(50*fcos(itofix(2*VBLframe))),
-                                    fixtoi(50*fcos(itofix(1*VBLframe))), 320, 200);
+                                    fixtoi(50*fcos(itofix(1*VBLframe))), SCREEN_W, SCREEN_H);
 
             K3DSetObjectRendering(&cube, TEXTURE, QSORT, Z);
             K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(300),
@@ -957,6 +1050,8 @@ void PartPulseCube(void)
                            VBLframe<<16, VBLframe<<15, VBLframe<<14);
             K3DRenderObject(buffer, &cube);
         }
+        //DrawCounter();        
+        Update();
     }
 
     map = create_bitmap(256, 256);
@@ -966,10 +1061,7 @@ void PartPulseCube(void)
 
     while (GetPosition() < 0x1500)
     {
-        WaitVBL();
         color_map = &tableGlenz1;
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
 
         DeformBitmapScroll(buffer, img, deform, 150+fixtoi(150*fsin(itofix(VBLframe)))
                            , 90+fixtoi(90*fcos(itofix(3*VBLframe)))
@@ -979,7 +1071,7 @@ void PartPulseCube(void)
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
 
         // first cube
-        set_projection_viewport(0, 0, 160, 100);
+        set_projection_viewport(0, 0, SCREEN_W/2, SCREEN_H/2);
 
         K3DSetObjectRendering(&cube, TEXTURE, QSORT, Z);
         K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(300),
@@ -998,7 +1090,7 @@ void PartPulseCube(void)
         K3DRenderObject(buffer, &cube);
 
         // 2e cube
-        set_projection_viewport(320-160, 0, 160, 100);
+        set_projection_viewport(SCREEN_W-SCREEN_W/2, 0, SCREEN_W/2, SCREEN_H/2);
 
         K3DSetObjectRendering(&cube, TEXTURE, QSORT, Z);
         K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(300),
@@ -1017,7 +1109,7 @@ void PartPulseCube(void)
         K3DRenderObject(buffer, &cube);
 
         // 3e cube
-        set_projection_viewport(0, 200-100, 160, 100);
+        set_projection_viewport(0, SCREEN_H-SCREEN_H/2, SCREEN_W/2, SCREEN_H/2);
 
         K3DSetObjectRendering(&cube, TEXTURE, QSORT, Z);
         K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(300),
@@ -1036,7 +1128,7 @@ void PartPulseCube(void)
         K3DRenderObject(buffer, &cube);
 
         // 4e cube
-        set_projection_viewport(320-160, 200-100, 160, 100);
+        set_projection_viewport(SCREEN_W-SCREEN_W/2, SCREEN_H-SCREEN_H/2, SCREEN_W/2, SCREEN_H/2);
 
         K3DSetObjectRendering(&cube, TEXTURE, QSORT, Z);
         K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(300),
@@ -1054,7 +1146,7 @@ void PartPulseCube(void)
                        VBLframe<<14, VBLframe<<16, VBLframe<<14);
         K3DRenderObject(buffer, &cube);
 
-        set_projection_viewport(0, 0, 320, 200);
+        set_projection_viewport(0, 0, SCREEN_W, SCREEN_H);
         K3DPlaceObject(&patate, itofix(0), itofix(0), itofix(300)+60*(fsin(itofix(5*VBLframe))),
                        VBLframe<<15, VBLframe<<16, (-VBLframe)<<14);
 
@@ -1069,15 +1161,17 @@ void PartPulseCube(void)
         }
         K3DDrawObject(buffer, &patate);
 
-
+        DrawCounter();
+		Update();
     }
 }
 
 void PartCity(void)
 {
-    RLE_SPRITE * mask;
+    RLE_SPRITE *mask, *world;
 
-    mask = data[Bmask1].dat;
+    mask = stretch_rle(data[Bmask1].dat);
+    world = stretch_rle(data[Bworld].dat);
 
     K3DSetObjectRendering(&city, FLAT, NONE, Z);
     K3DSetObjectMap(&city, data[Bmap256c].dat);
@@ -1093,19 +1187,13 @@ void PartCity(void)
 
     while (GetPosition() < 0x1700)
     {
-        WaitVBL();
         color_map = &tableGlenz1;
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
-
-        //  clear(buffer);
-
         stretch_blit(data[Bdeform].dat, buffer,
-                     160+fixtoi(150*fcos(itofix(VBLframe))),
-                     100+fixtoi(90*fsin(itofix(2*VBLframe))),
-                     160+fixtoi(80*fsin(itofix(3*VBLframe))),
-                     100+fixtoi(50*fcos(itofix(4*VBLframe))),
-                     0, 0, 320, 200);
+                     SCREEN_W/2+fixtoi(150*fcos(itofix(VBLframe))),
+                     SCREEN_H/2+fixtoi(90*fsin(itofix(2*VBLframe))),
+                     SCREEN_W/2+fixtoi(80*fsin(itofix(3*VBLframe))),
+                     SCREEN_H/2+fixtoi(50*fcos(itofix(4*VBLframe))),
+                     0, 0, SCREEN_W, SCREEN_H);
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz3;
@@ -1120,20 +1208,23 @@ void PartCity(void)
         {
         case 0:
             color_map = &tableGlenz1;
-            draw_trans_rle_sprite(buffer, data[Bworld].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, world, 0, 0);
             break;
         case 1:
             color_map = &tableGlenz2;
-            draw_trans_rle_sprite(buffer, data[Bworld].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, world, 0, 0);
             break;
         case 2:
             color_map = &tableGlenz3;
-            draw_trans_rle_sprite(buffer, data[Bworld].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, world, 0, 0);
             break;
         case 3:
 
             break;
         }
+
+        DrawCounter();
+        Update();
 
         if (key[KEY_ESC])
             break;
@@ -1143,26 +1234,29 @@ void PartCity(void)
 
 void PartEye(void)
 {
+    RLE_SPRITE *head, *knights, *kills, *eyes, *eye;
+
+    head = stretch_rle(data[Bhead].dat);
+    knights = stretch_rle(data[Bknights].dat);
+    kills = stretch_rle(data[Bkills].dat);
+    eyes = stretch_rle(data[Beyes].dat);
+    eye = stretch_rle(data[Beye].dat);
+
     K3DSetObjectRendering(&bizar, FLAT, NONE, Z);
     K3DSetObjectRendering(&bizar2, FLAT, NONE, Z);
     set_palette(data[Phead].dat);
 
     bizar.zmax = 64;
 
-
     while (GetPosition() < 0x1800)
     {
-        WaitVBL();
         color_map = &tableGlenz1;
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
-
         stretch_blit(data[Bdeform].dat, buffer,
-                     160+fixtoi(150*fcos(itofix(VBLframe))),
-                     100+fixtoi(90*fsin(itofix(2*VBLframe))),
-                     160+fixtoi(80*fsin(itofix(3*VBLframe))),
-                     100+fixtoi(50*fcos(itofix(4*VBLframe))),
-                     0, 0, 320, 200);
+                     SCREEN_W/2+fixtoi(150*fcos(itofix(VBLframe))),
+                     SCREEN_H/2+fixtoi(90*fsin(itofix(2*VBLframe))),
+                     SCREEN_W/2+fixtoi(80*fsin(itofix(3*VBLframe))),
+                     SCREEN_H/2+fixtoi(50*fcos(itofix(4*VBLframe))),
+                     0, 0, SCREEN_W, SCREEN_H);
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz3;
@@ -1175,32 +1269,30 @@ void PartEye(void)
             K3DRenderObject(buffer, &bizar2);
 
         if (GetPosition()&4)
-            draw_rle_sprite(buffer, data[Bhead].dat, 0, 0);
+            draw_rle_sprite(buffer, head, 0, 0);
 
         if (GetPosition()&8)
             set_palette(data[Phead].dat);
         else
-            set_palette(head);
+            set_palette(head_pal);
 
         if (key[KEY_ESC])
             break;
+            
+        DrawCounter();
+        Update();
     }
 
     while (GetPosition() < 0x1900)
     {
-        WaitVBL();
         color_map = &tableGlenz1;
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
-
-        //  clear(buffer);
 
         stretch_blit(data[Bdeform].dat, buffer,
-                     160+fixtoi(150*fcos(itofix(VBLframe))),
-                     100+fixtoi(90*fsin(itofix(2*VBLframe))),
-                     160+fixtoi(80*fsin(itofix(3*VBLframe))),
-                     100+fixtoi(50*fcos(itofix(4*VBLframe))),
-                     0, 0, 320, 200);
+                     SCREEN_W/2+fixtoi(150*fcos(itofix(VBLframe))),
+                     SCREEN_H/2+fixtoi(90*fsin(itofix(2*VBLframe))),
+                     SCREEN_W/2+fixtoi(80*fsin(itofix(3*VBLframe))),
+                     SCREEN_H/2+fixtoi(50*fcos(itofix(4*VBLframe))),
+                     0, 0, SCREEN_W, SCREEN_H);
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz3;
@@ -1211,18 +1303,19 @@ void PartEye(void)
         color_map = &tableGlenz1;
 
         if (GetPosition() < 0x1810)
-            draw_trans_rle_sprite(buffer, data[Bknights].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, knights, 0, 0);
         if ((GetPosition() >= 0x1810) && (GetPosition() < 0x1820))
-            draw_trans_rle_sprite(buffer, data[Bkills].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, kills, 0, 0);
         if ((GetPosition() >= 0x1820) && (GetPosition() < 0x1830))
-            draw_trans_rle_sprite(buffer, data[Beyes].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, eyes, 0, 0);
         if (GetPosition() > 0x1830)
-            draw_trans_rle_sprite(buffer, data[Beye].dat, 0, 0);
-
-
+            draw_trans_rle_sprite(buffer, eye, 0, 0);
 
         if (key[KEY_ESC])
             break;
+            
+        DrawCounter();
+        Update();
     }
 }
 
@@ -1233,7 +1326,7 @@ void PartEyeGore(void)
 
     bufferEye = create_bitmap(358, 363);
     set_palette(data[Pend].dat);
-    blit(data[Bend].dat, screen, 0, 0, 140, 58, 358, 363);
+    blit(data[Bend].dat, screen, 0, 0, (SCREEN_W-358)/2, (SCREEN_H-363)/2, 358, 363);
 
     while (GetPosition() <= 0x1a00)
     {
@@ -1248,7 +1341,7 @@ void PartEyeGore(void)
     while (GetPosition() < 0x1b00)
     {
         WaitVBL();
-        blit(bufferEye, screen, 0, 0, 140, 58, 358, 363);
+        blit(bufferEye, screen, 0, 0, (SCREEN_W-358)/2, (SCREEN_H-363)/2, 358, 363);
         ThresholdSmooth(bufferEye, data[Bend].dat, data[Bseuil].dat, 256-(VBLframe-correct));
         if (key[KEY_ESC])
             break;
@@ -1262,7 +1355,10 @@ void PartFinal(void)
     int i;
 
     //  CalcBump(data[Bdeform].dat);
+	RLE_SPRITE *knights, *title;
 
+	knights = stretch_rle(data[Bknights].dat);
+	title = stretch_rle(data[Btitle].dat);
 
     for (i = 0;i < 256;i++)
     {
@@ -1276,26 +1372,16 @@ void PartFinal(void)
 
     bizar.zmax = 64;
 
-
-
     while (GetPosition() < 0x1c00)
     {
-        WaitVBL();
         color_map = &tableGlenz1;
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
-
 
         stretch_blit(data[Bdeform].dat, buffer,
-                     160+fixtoi(150*fcos(itofix(VBLframe))),
-                     100+fixtoi(90*fsin(itofix(2*VBLframe))),
-                     160+fixtoi(80*fsin(itofix(3*VBLframe))),
-                     100+fixtoi(50*fcos(itofix(4*VBLframe))),
-                     0, 0, 320, 200);
-
-
-        //    DrawBump(buffer,mouse_x,mouse_y);
-
+                     SCREEN_W/2+fixtoi(150*fcos(itofix(VBLframe))),
+                     SCREEN_H/2+fixtoi(90*fsin(itofix(2*VBLframe))),
+                     SCREEN_W/2+fixtoi(80*fsin(itofix(3*VBLframe))),
+                     SCREEN_H/2+fixtoi(50*fcos(itofix(4*VBLframe))),
+                     0, 0, SCREEN_W, SCREEN_H);
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz3;
@@ -1305,23 +1391,20 @@ void PartFinal(void)
 
         if (key[KEY_ESC])
             break;
+            
+        DrawCounter();
+        Update();
     }
 
     while (GetPosition() <= 0x2000)
     {
-        WaitVBL();
         color_map = &tableGlenz1;
-        DrawCounter();
-        blit(buffer, screen, 0, 0, 0, 0, 320, 200);
-
-        //  clear(buffer);
-
         stretch_blit(data[Bdeform].dat, buffer,
-                     160+fixtoi(150*fcos(itofix(VBLframe))),
-                     100+fixtoi(90*fsin(itofix(2*VBLframe))),
-                     160+fixtoi(80*fsin(itofix(3*VBLframe))),
-                     100+fixtoi(50*fcos(itofix(4*VBLframe))),
-                     0, 0, 320, 200);
+                     SCREEN_W/2+fixtoi(150*fcos(itofix(VBLframe))),
+                     SCREEN_H/2+fixtoi(90*fsin(itofix(2*VBLframe))),
+                     SCREEN_W/2+fixtoi(80*fsin(itofix(3*VBLframe))),
+                     SCREEN_H/2+fixtoi(50*fcos(itofix(4*VBLframe))),
+                     0, 0, SCREEN_W, SCREEN_H);
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz3;
@@ -1337,7 +1420,7 @@ void PartFinal(void)
 
         color_map = &tableGlenz1;
         if ((GetPosition() > 0x1e00) && (GetPosition() & 4))
-            draw_trans_rle_sprite(buffer, data[Bknights].dat, 0, 0);
+            draw_trans_rle_sprite(buffer, knights, 0, 0);
 
         if (GetPosition() > 0x1e00)
         {
@@ -1345,30 +1428,30 @@ void PartFinal(void)
             {
             case 0:
                 color_map = &tableGlenz1;
-                draw_trans_rle_sprite(buffer, data[Bknights].dat, 0, 0);
+                draw_trans_rle_sprite(buffer, knights, 0, 0);
                 break;
             case 3:
                 color_map = &tableGlenz2;
-                draw_trans_rle_sprite(buffer, data[Bknights].dat, 0, 0);
+                draw_trans_rle_sprite(buffer, knights, 0, 0);
                 break;
             case 5:
                 color_map = &tableGlenz3;
-                draw_trans_rle_sprite(buffer, data[Bknights].dat, 0, 0);
+                draw_trans_rle_sprite(buffer, knights, 0, 0);
                 break;
             case 7:
 
                 break;
             case 9:
                 color_map = &tableGlenz1;
-                draw_trans_rle_sprite(buffer, data[Btitle].dat, 0, 0);
+                draw_trans_rle_sprite(buffer, title, 0, 0);
                 break;
             case 11:
                 color_map = &tableGlenz2;
-                draw_trans_rle_sprite(buffer, data[Btitle].dat, 0, 0);
+                draw_trans_rle_sprite(buffer, title, 0, 0);
                 break;
             case 13:
                 color_map = &tableGlenz3;
-                draw_trans_rle_sprite(buffer, data[Btitle].dat, 0, 0);
+                draw_trans_rle_sprite(buffer, title, 0, 0);
                 break;
             case 15:
 
@@ -1385,32 +1468,16 @@ void PartFinal(void)
 
         if (key[KEY_ESC])
             break;
+        DrawCounter();
+        Update();
     }
 }
 
 void Demo(void)
 {
-//  clear(screen);
-    set_gfx_mode(mode, 640, 480, 0, 0);
-    clear(screen);
-
-    K3DInitObject(&cube);
-    K3DInitObject(&patate);
-    K3DInitObject(&aim);
-    K3DInitObject(&city);
-    K3DInitObject(&bizar);
-    K3DInitObject(&bizar2);
-    K3DLoadObjectASC("world.asc", &city);
-    K3DLoadObjectASC("cube.asc", &cube);
-    K3DLoadObjectASC("patate.asc", &patate);
-    K3DLoadObjectASC("bizar2.asc", &bizar);
-    K3DLoadObjectASC("bizar.asc", &bizar2);
-    InitAim(&aim);
-
-    buffer = create_bitmap(320, 200);
+    buffer = create_bitmap(SCREEN_W, SCREEN_H);
+    
     PartCredits();
-    set_gfx_mode(mode, 320, 200, 0, 0);
-
     PartTitle();
 
     PartParticles();
@@ -1419,9 +1486,7 @@ void Demo(void)
     PartPulseCube();
     PartCity();
     PartEye();
-    set_gfx_mode(mode, 640, 480, 0, 0);
     PartEyeGore();
-    set_gfx_mode(mode, 320, 200, 0, 0);
     PartFinal();
 
 
@@ -1441,38 +1506,22 @@ void Demo(void)
 int main(int argc, char ** argv)
 {
     char buf[80];
-
+    int card, w, h;
+    
     printf("Styler (c) KNIGHTS 1998\n  FINAL Version\n");
     printf("  ( Run with any parameter to run sound setup )\n");
-
+    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE) < 0)
+    {
+        fprintf(stderr, "Couldn't initialize SDL: %s\n", SDL_GetError());
+        exit(1);
+    }
     allegro_init();
 
     printf("  Loading ");
     printf(".");
-    if (argc>1)
-        mode = GFX_AUTODETECT_FULLSCREEN;
 
-    install_timer ();
-    install_keyboard ();
-    reserve_voices (20, -1);
-
-#ifdef USE_JGMOD
-
-    if (install_sound (DIGI_AUTODETECT, MIDI_NONE, NULL) < 0)
-    {
-        printf ("Error initializing sound card");
-        return 1;
-    }
-
-    set_volume(128,0);
-
-    if (install_mod (20) < 0)
-    {
-        printf ("Error setting digi voices");
-        return 1;
-    }
-#endif
-
+    install_keyboard();
+    install_mouse();
 
     /* load the datafile into memory */
     strcpy(buf, argv[0]);
@@ -1490,42 +1539,37 @@ int main(int argc, char ** argv)
 
     printf(".");
     fflush(stdout);
-    //  install_mouse();
-
-    fflush(stdout);
-
-#ifdef USE_JGMOD
-
-    module = load_mod ("styler.xm");
-    if (module == NULL)
-    {
-        printf ("Error reading styler.xm");
-        return 1;
-    }
-#endif
 
     printf(".");
     fflush(stdout);
 
+    if (argc>1) 
+    {
+        int tokens;
+        tokens = sscanf(argv[1], "%dx%d", &w, &h);
+        if (tokens != 2) 
+        {
+            printf("  \"%s\" is not a valid display mode, try '640x480' you douche.\n", argv[1]);
+        }
+        set_gfx_mode(mode, w, h, 0, 0);
+    }
+    else 
+    {
+        //set_gfx_mode(mode, 320, 240, 0, 0);
+        //gfx_mode_select(&card, &w, &h);
+        //set_gfx_mode(card, w,h, 0,0);
+        set_gfx_mode(mode, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0);
+    }
+
     InitDemo();
 
-//  set_gfx_mode(mode, 320, 200, 0, 0);
-
-#ifdef USE_JGMOD
-    play_mod (module, TRUE);
-    set_mod_volume(128);
-#endif
-
-    install_int(TimerHandler, 1000);
-
+    MusicStart("styler.xm");
+    SDL_AddTimer(100, MusicUpdate, 0);
+    SDL_AddTimer(1000,TimerHandler, 0);
+    
     Demo();
-//  readkey();
 
-
-#ifdef USE_JGMOD
-    stop_mod ();
-    destroy_mod (module);
-#endif
+    MusicStop();
 
     /* unload the datafile when we are finished with it */
     unload_datafile(data);

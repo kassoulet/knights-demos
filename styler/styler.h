@@ -1,6 +1,6 @@
-/* Allegro datafile object indexes, produced by grabber v3.0 */
-/* Datafile: c:\code\demos\styler\styler.dat */
-/* Date: Fri Feb 27 20:43:01 1998 */
+/* Allegro datafile object indexes, produced by grabber v4.2.2, Unix */
+/* Datafile: /home/gautier/code/demos/mindlink/styler/styler.dat */
+/* Date: Wed Mar 25 13:47:36 2009 */
 /* Do not hand edit! */
 
 #define Bback1                           0        /* BMP  */
@@ -19,7 +19,7 @@
 #define Bkills                           13       /* RLE  */
 #define Bknights                         14       /* RLE  */
 #define BlogicDream                      15       /* RLE  */
-#define Blogo                            16       /* RLE  */
+#define Blogo                            16       /* BMP  */
 #define Bmap128                          17       /* BMP  */
 #define Bmap256b                         18       /* BMP  */
 #define Bmap256c                         19       /* BMP  */
