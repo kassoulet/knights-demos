@@ -15,20 +15,27 @@
 
 #include "effects.h"
 
-
+extern float SCALE_X;
+extern float SCALE_Y;
 char _map[256*256];
-char _image[320*200];
+char *_image;
 
 void SetTunnelMap(BITMAP * bmp, BITMAP * img)
 {
     int x,y;
+    BITMAP *tmp;
 
     for (x = 0;x < 256;x++)
         for (y = 0;y < 256;y++)
-            _map[y*256+x] = getpixel(bmp, x, y);
-    for (x = 0;x < 320;x++)
-        for (y = 0;y < 200;y++)
-            _image[y*320+x] = getpixel(img, x, y);
+            _map[y*256+x] = _getpixel(bmp, x, y);
+            
+    _image = malloc(SCREEN_W*SCREEN_H);
+    tmp = create_bitmap(SCREEN_W, SCREEN_H);
+    stretch_blit(img, tmp, 0, 0, 320, 200, 0, 0, SCREEN_W, SCREEN_H);
+    for (x = 0;x < SCREEN_W;x++)
+        for (y = 0;y < SCREEN_H;y++)
+            _image[y*SCREEN_W+x] = _getpixel(tmp, x, y);
+    destroy_bitmap(tmp);
 }
 
 
@@ -36,35 +43,34 @@ void CalcTunnelLookup(unsigned short* lookup, int orientation, int deep)
 {
     int x,y;
 
-    for (x = 0;x < 320;x++)
+    for (x = 0;x < SCREEN_W;x++)
     {
-        for (y = 0;y < 200;y++)
+        for (y = 0;y < SCREEN_H;y++)
         {
             fixed n,m;
-            if ((y-100) != 0)
-                lookup[320*y+x] = (fixtoi(fatan(fdiv(itofix(x-160), itofix(y-100)))))<<9;
+            if ((y-SCREEN_H/2) != 0)
+                lookup[SCREEN_W*y+x] = (fixtoi(fatan(fdiv(itofix(x-SCREEN_W/2), itofix(y-SCREEN_H/2)))))<<9;
             else
-                lookup[320*y+x] = (128)<<8;
-            n = itofix(x-160);
-            m = itofix(y-100);
-            if (sqrt((int)(x-160)*(x-160)+(y-100)*(y-100)) != 0)
+                lookup[SCREEN_W*y+x] = (128)<<8;
+            n = itofix(x-SCREEN_W/2);
+            m = itofix(y-SCREEN_H/2);
+            if (sqrt((int)(x-SCREEN_W/2)*(x-SCREEN_W/2)+(y-SCREEN_H/2)*(y-SCREEN_H/2)) != 0)
             {
                 if (deep)
-                    lookup[320*y+x] += (4096)/(int)sqrt((x-160)*(x-160)+(y-100)*(y-100));
+                    lookup[SCREEN_W*y+x] += (SCALE_X*4096)/(int)sqrt((x-SCREEN_W/2)*(x-SCREEN_W/2)+(y-SCREEN_H/2)*(y-SCREEN_H/2));
                 else
-                    lookup[320*y+x] += (int)sqrt((x-160)*(x-160)+(y-100)*(y-100));
+                    lookup[SCREEN_W*y+x] += (int)sqrt((x-SCREEN_W/2)*(x-SCREEN_W/2)+(y-SCREEN_H/2)*(y-SCREEN_H/2));
             }
             if (orientation)
             {
                 char temp;
-                temp = lookup[320*y+x]/256;
-                lookup[320*y+x] = lookup[320*y+x]*256+temp;
+                temp = lookup[SCREEN_W*y+x]/256;
+                lookup[SCREEN_W*y+x] = lookup[SCREEN_W*y+x]*256+temp;
             }
         }
     }
 }
-
-// since there is asm code in the function, DO NOT INLINE
+
 void DrawTunnel(BITMAP* buffer, unsigned short* lookup, int x, int y, TDeformTable * deform)
 {
     int offset;
@@ -74,7 +80,7 @@ void DrawTunnel(BITMAP* buffer, unsigned short* lookup, int x, int y, TDeformTab
 
     // offset in map
     offset = (x&255)*256+(y&255);
-    for (i = 0;i < 320*200;i++)
+    for (i = 0;i < SCREEN_W*SCREEN_H;i++)
     {
         unsigned char pixel;
         unsigned short address;
@@ -88,45 +94,6 @@ void DrawTunnel(BITMAP* buffer, unsigned short* lookup, int x, int y, TDeformTab
         pixel = *(_map+(address&0xffff));
         *(char*)(buffer->dat+i) = *pPicture++ + pixel;
     }
-
-    // draw the tunnel on the buffer
-    /*
-      // offset in map
-      offset = (x&255)*256+(y&255);
-
-      for(i = 0;i < 320*200;i++)
-      {
-      *(((char*)buffer->dat)+i) =
-      *((char*)_image+((lookup[i]+deform->table[lookup[i]&255]+offset)&0xffff));
-      }
-      */
-    /*
-    asm volatile ("
-      pushl %%ebp
-      movl %%ecx,%%ebp
-      movl $320*200/1,%%ecx
-      glenz_tunnel_loop:
-      xorl %%ebx,%%ebx
-      movl (%%edx,%%ecx,2),%%eax
-      movb %%ah,%%bl    // ***
-      addl %%ebp,%%eax
-      movl (%%esi,%%ebx,4),%%ebx
-      addl %%ebx,%%eax
-      andl $0xffff,%%eax
-      movb __map(%%eax),%%al
-      movb __image(%%ecx),%%bl
-      addb %%bl,%%al
-      movb %%al,(%%edi,%%ecx)
-
-      decl %%ecx
-      jns  glenz_tunnel_loop
-      popl %%ebp
-      "
-      :
-    : "c" (offset),"D" (buffer->dat), "S" (&deform->table), "d" (lookup)
-      : "eax","ebx","ecx","edx","esi","edi"
-      );
-      */
 }
 
 
@@ -182,26 +149,6 @@ void Threshold(BITMAP *dest, BITMAP *img, BITMAP *height, int threshold)
         s++;
         h++;
     }
-
-    /*
-    for(i=img->w*img->h-1;i>=0;i--)
-    {
-    if ((*h)<(unsigned char)threshold)
-    *d=*s;
-    else
-    *d=0;
-    d++;
-    s++;
-    h++;
-    }
-    */
-    /*
-    if (*((unsigned char*)height->dat+i) < threshold)
-    *((unsigned char*)dest->dat+i)=*((unsigned char*)img->dat+i);
-    else
-    *((unsigned char*)dest->dat+i)=0;
-    */
-
 }
 
 void ThresholdSmooth(BITMAP *dest, BITMAP *img, BITMAP *height, int threshold)
@@ -305,12 +252,12 @@ void drawRotatedBack(BITMAP * buffer, BITMAP * back, fixed angle)
     int s,z;
     int size = 255;
 
-    s = (itofix(420)+150*fsin(angle))>>16;
+    s = (itofix(420*SCALE_X)+(int)(150*SCALE_X*fsin(angle)))>>16;
 
     points[0].x = itofix(0);
     points[0].y = itofix(0);
-    points[0].x = (s*fcos(angle))+itofix(160);
-    points[0].y = (s*fsin(angle))+itofix(100);
+    points[0].x = (s*fcos(angle))+itofix(SCREEN_W/2);
+    points[0].y = (s*fsin(angle))+itofix(SCREEN_H/2);
     points[0].z = z;
     points[0].u = 0;
     points[0].v = 0;
@@ -318,8 +265,8 @@ void drawRotatedBack(BITMAP * buffer, BITMAP * back, fixed angle)
 
     points[1].x = itofix(320);
     points[1].y = itofix(0);
-    points[1].x = (s*fcos(angle+itofix(64)))+itofix(160);
-    points[1].y = (s*fsin(angle+itofix(64)))+itofix(100);
+    points[1].x = (s*fcos(angle+itofix(64)))+itofix(SCREEN_W/2);
+    points[1].y = (s*fsin(angle+itofix(64)))+itofix(SCREEN_H/2);
     points[1].z = z;
     points[1].u = size<<16;
     points[1].v = 0;
@@ -327,8 +274,8 @@ void drawRotatedBack(BITMAP * buffer, BITMAP * back, fixed angle)
 
     points[2].x = itofix(320);
     points[2].y = itofix(200);
-    points[2].x = (s*fcos(angle+itofix(128)))+itofix(160);
-    points[2].y = (s*fsin(angle+itofix(128)))+itofix(100);
+    points[2].x = (s*fcos(angle+itofix(128)))+itofix(SCREEN_W/2);
+    points[2].y = (s*fsin(angle+itofix(128)))+itofix(SCREEN_H/2);
     points[2].z = z;
     points[2].u = size<<16;
     points[2].v = size<<16;
@@ -336,8 +283,8 @@ void drawRotatedBack(BITMAP * buffer, BITMAP * back, fixed angle)
 
     points[3].x = itofix(0);
     points[3].y = itofix(200);
-    points[3].x = (s*fcos(angle+itofix(192)))+itofix(160);
-    points[3].y = (s*fsin(angle+itofix(192)))+itofix(100);
+    points[3].x = (s*fcos(angle+itofix(192)))+itofix(SCREEN_W/2);
+    points[3].y = (s*fsin(angle+itofix(192)))+itofix(SCREEN_H/2);
     points[3].z = z;
     points[3].u = 0;
     points[3].v = size<<16;
@@ -376,46 +323,10 @@ void DeformBitmapScroll(BITMAP *dest,BITMAP *src,BITMAP *deform,int dx,int dy,in
 
     for (y=0;y<dest->h;y++)
         for (x=0;x<dest->w;x++)
-            _putpixel(dest,x,y,_getpixel(src,ix+x+_getpixel(deform,dx+x,dy+y),y+iy));
+            _putpixel(dest,x,y,_getpixel(src,
+            	(ix+x+_getpixel(deform,(dx+x)&511,(dy+y)&511)) & 511,
+            	(y+iy) & 511));
 }
-
-/*
-void DeformBitmapScroll(BITMAP *dest, BITMAP *src, BITMAP *deform, int dx, int dy, int ix, int iy)
-{
-  int y;
-
-  for(y = 0;y < dest->h;y++)
-  {
-
-    asm("
-      pushl %%ebp
-      movl  %%eax,%%ebp
-      xorl  %%ebx,%%ebx
-
-      DeformBitmapScroll_Loop:
-      movb (%%edx),%%bl
-      movl %%esi,%%ecx
-      addl %%ebx,%%ecx
-      movb (%%ecx),%%al
-      movb %%al,(%%edi)
-
-      addl $1,%%edi
-      addl $1,%%edx
-      addl $1,%%esi
-      decl %%ebp
-      jnz  DeformBitmapScroll_Loop
-
-      popl  %%ebp
-      "
-      :
-    : "a" (dest->w), "d" (deform->line[y+dy]+dx), "D" (dest->line[y]), "S" (src->line[y+iy]+ix)
-      : "eax", "ebx", "ecx", "edx", "edi", "esi"
-      );
-
-  }
-
-}
-*/
 
 
 
@@ -487,51 +398,8 @@ void DrawPlasma(BITMAP * buffer, BITMAP * image, int frame, int amplitude, int d
                 S++;
                 D++;
             }
-
-            /*
-              asm volatile ("
-                Xloop:
-                movl    (%%edx),%%eax
-                addl    %%ebx,%%eax
-                movb    (%%esi,%%eax),%%al
-                incl    %%esi
-                movb    %%al,(%%edi)
-                incl    %%edi
-                addl    $4,%%edx
-                decl    %%ecx
-                jns     Xloop
-                "
-                :
-              : "D" (dest+320*y), "S" (img+450*y), "d" (sinus), "c" (319), "b" (sinus[320+y])
-                : "eax","ebx","ecx","edx","edi","esi");
-            */
-
         }
     }
-    /*
-    asm volatile ("
-    movl    $199,%%ebx
-    Yloop:
-    movl    $319,%%ecx
-    Xloop:
-    movl    (%%edx,%%ecx,4),%%eax
-    addl    319*4(%%edx,%%ebx,4),%%eax
-    //              andl    $0xffff,%%eax
-    movb    (%%esi,%%eax),%%al
-    incl    %%esi
-    movb    %%al,(%%edi)
-    incl    %%edi
-
-    decl    %%ecx
-    jns     Xloop
-    addl    $130,%%esi     //80
-    decl    %%ebx
-    jnz     Yloop
-    "
-    :
-    : "D" (buffer->dat), "S" (image->dat), "d" (sinus)
-    : "eax","ebx","ecx","edx","edi","esi");
-    */
 }
 
 /*
@@ -544,49 +412,7 @@ WARNING
 void DrawWater(BITMAP * buffer, BITMAP * old)
 {
     // compute water data
-    /*
-    asm volatile("
-      pushl %%ebp
-      xorl %%ebx,%%ebx
-      xorl %%ecx,%%ecx
-      xorl %%edx,%%edx
-      movl  $320*150,%%ebp
 
-      water_loop:
-      // pixel loop
-      xorl %%eax,%%eax
-
-      // add the S,W,E,N pixels
-      movb -320(%%esi),%%al
-      movb -1(%%esi),%%bl
-      movb 1(%%esi),%%cl
-      movb 320(%%esi),%%dl
-
-      // add them and div by 2
-      addl %%ebx,%%eax
-      addl %%edx,%%ecx
-      addl %%ecx,%%eax
-      shrl $1,%%eax
-      andl $0xff,%%eax
-      movb (%%edi),%%ah
-
-      // search into the lookup
-      movb __map(%%eax),%%bl
-
-      // plot it
-      movb %%bl,(%%edi)
-
-      incl %%edi
-      incl %%esi
-      dec %%ebp
-      jnz water_loop
-
-      popl %%ebp
-      ":
-    : "D"(buffer->dat+320*25), "S"(old->dat+320*25)
-      : "eax","ebx","ecx","edx","esi","edi"
-      );
-    */
     int i;
     unsigned int b;
 
@@ -604,7 +430,6 @@ void DrawWater(BITMAP * buffer, BITMAP * old)
 }
 
 /* don't really work... */
-
 void CalcWater(void)
 {
     int x,y,j;
@@ -702,19 +527,4 @@ void DrawBump(BITMAP * buffer, int x1, int y1)
 }
 
 
-/*
-dx = *(map->line[y]+x+1)-*(map->line[y]+x-1);
-vx = x-mouse_x;
-c = abs(vx-dx);
-dy = *(map->line[y+1]+x)-*(map->line[y-1]+x);
-vy = y-mouse_y;
-c += abs(vy-dy);
-
-c = 255-c;
-c = -c;
-if(c<=0) c = 1;
-if(c>255) c = 255;
-
-*(buffer->line[y]+x) = c;
-*/
 
