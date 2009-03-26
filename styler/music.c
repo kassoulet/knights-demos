@@ -38,13 +38,8 @@ void MusicStart(char *filename)
     md_mode |= DMODE_HQMIXER;
     md_mode |= DMODE_16BITS;
 
-
     MikMod_RegisterAllLoaders();
     MikMod_RegisterAllDrivers();
-
-    //puts(MikMod_InfoDriver());
-
-
 
     MikMod_Init(NULL);
 
@@ -56,7 +51,6 @@ void MusicStart(char *filename)
     }
     Player_Start(module);
     module->loop = 0; // allows module to loop at the end.
-    
 }
 
 

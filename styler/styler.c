@@ -2,7 +2,7 @@
 
   Styler
 
-  Coded by Gautier "Impulse" PORTET
+  Coded by Gautier "Impulse" PORTET <kassoulet gmail com>
 
   01/98  02/98
 
@@ -10,7 +10,6 @@
 
   Main File
 
-  gautier@tlk.fr
 */
 
 #define USE_CONSOLE
@@ -1324,6 +1323,7 @@ void PartEyeGore(void)
     BITMAP * bufferEye;
     int correct;
 
+    clear(screen);
     bufferEye = create_bitmap(358, 363);
     set_palette(data[Pend].dat);
     blit(data[Bend].dat, screen, 0, 0, (SCREEN_W-358)/2, (SCREEN_H-363)/2, 358, 363);
@@ -1575,7 +1575,7 @@ int main(int argc, char ** argv)
     unload_datafile(data);
 
     set_gfx_mode(GFX_TEXT, 640, 480, 0, 0);
-    printf("       ______                                                             _____\n");
+    printf("\n       ______                                                             _____\n");
     printf("______\\\\     \\______________________________________  ___________________/    /\n");
     printf("\\      \\\\                                           |/ \"I've Got The Poison\" / \n");
     printf(" \\      |\\     .______.    ._______.   .______.     |_. .___.   .____.  .___/  \n");
@@ -1586,10 +1586,6 @@ int main(int argc, char ** argv)
     printf(" !Fuck'Em All! \\//                          \\\\/          \\\\/      !SenseRofTHN! \n");
 
     printf("\nStyler [%s %s]\n\n", __DATE__, __TIME__);
-    printf("Contact Impulse    : Impulse.Knights@CryoGen.Com (subject: 'for impulse')\n");
-    printf("                     3 place F. Buisson. 31240 St Jean. France\n");
-    printf("Swapping & KNiGHTS : fgermain@NormandNet.fr & www.NormandNet.fr/~fgermain\n");
-    printf("                     Knights.fr@CryoGen.Com\n");
 
 //  destroy_bitmap(buffer);
     return 0;
