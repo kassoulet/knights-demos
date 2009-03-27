@@ -102,7 +102,7 @@ void DoDeformTable(TDeformTable* deform, int position)
     int i,c;
 
     // Compute deformation lookup
-    for (i = 255;i >= 0;i--)
+    for (i=0; i<256; i++)
     {
         c = (
                 fsin(itofix(((((i+position)*deform->param[0].freq)>>16)+

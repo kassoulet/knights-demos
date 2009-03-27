@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 
-unsigned char faceOrder[256],faceDepth[256];
+unsigned char faceOrder[1024],faceDepth[1024];
 
 void _triangle(BITMAP * bmp, int x1, int  y1, int  x2, int  y2, int x3, int y3, int color)
 {

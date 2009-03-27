@@ -5,7 +5,7 @@ prefix=/usr/i586-mingw32msvc
 CC = $(target)gcc
 
 CFLAGS = -O3 -march=i686 -ffast-math -I$(prefix)/include/SDL
-LDLIBS = -L$(prefix)/lib -lmingw32 -lSDLmain -lSDL -lalleg -lmikmod 
+LDLIBS = -L$(prefix)/lib -lmingw32 -lSDLmain -lSDL -lalleg -lmikmod -lwinmm
 
 all : styler.exe
 
