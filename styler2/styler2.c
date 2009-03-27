@@ -25,13 +25,33 @@
 #include "effects.h"
 #include "styler2.h"
 
-#define USE_JGMOD
+#include <SDL.h>
 
-#ifdef USE_JGMOD
-#include <jgmod.h>
-JGMOD *module;
-#endif
+int SCREEN_WIDTH = 640;
+int SCREEN_HEIGHT= 400;
 
+float SCALE_X;
+float SCALE_Y;
+
+int mode=GFX_AUTODETECT_WINDOWED;
+
+extern int MusicGetPosition(void);
+extern void MusicStart(char *filename);
+extern void MusicStop();
+extern int MusicUpdate();
+extern void MusicSetPosition(int position);
+
+int quit = 0;
+int GetPosition(void)
+{
+    if (key[KEY_ESC])
+        quit = 1;
+    if (quit)
+        return 0xffff;
+    if (key[KEY_N])
+        return 0xffff;
+    return MusicGetPosition();
+}
 
 enum UPDATE_MODE
 {
@@ -172,6 +192,9 @@ void WaitVBL();
 void Update(BITMAP * buffer)
 {
   WaitVBL();
+  blit(buffer,screen,0,0,0,0,320,200);
+
+/*
   switch(UpdateMode)
   {
     case UM_WIN:
@@ -198,7 +221,7 @@ void Update(BITMAP * buffer)
     case UM_FULLSCREEN480b:
       stretch_blit(buffer,screen,0,0,320,200,0,0,640,480);
     break; 
-  }
+  }*/
 }
 
 
@@ -218,21 +241,7 @@ void Fatal(char* str)
 }
 
 
-
-void TimerHandler(void);
-/*
-void MIDAS_CALL prevr(void)
-{
-  VBLframe++;
-  if((VBLframe%(refreshRate/1000)) == 0)
-    TimerHandler();
-}
-
-void MIDAS_CALL advanceScroll(void)
-{
-  finalScrollPosition--;
-}
-*/
+
 void TimerHandler(void)
 {
   VBLfps = VBLcount;
@@ -257,7 +266,7 @@ void WaitVBL()
   		rest(1);
   }
 
-  if(key[KEY_TILDE])
+  if(key[KEY_SPACE])
   {
     BITMAP * display;
     char buf[16];
@@ -292,19 +301,7 @@ void WaitVBL()
     destroy_bitmap(display);
 
   }
-}
-
-int GetPosition(void)
-{
-  if(key[KEY_F1])
-    return 0xffff;
-
-#ifdef USE_JGMOD
-	return mi.trk*256+mi.pos;
-#endif
-  
-}
-
+}
 
 
 // ###############################################################
@@ -434,39 +431,6 @@ void testFeedback2(void)
 }
 
 
-
-/*
-void mergeBitmap(BITMAP *dest16,BITMAP *img8,BITMAP *lum,COLOR_MAP8 table)
-// 320x200x16 only !!!!
-{
-    unsigned short * _dest16;
-    unsigned char * src8, *lum8;
-    int j;
-
-    _dest16 = (unsigned short *)buffer->line[0];
-    lum8   = lum->line[0];
-    src8   = img8->line[0];
-
-    for(j = 199;j >= 0;j--)
-    asm volatile ("
-      xorl   %%eax,%%eax
-      merge_loopx:
-      movb   (%%edx),%%ah
-      movb   (%%esi),%%al
-      incl   %%edx
-      movw   (%%ebx,%%eax,2),%%ax
-      incl   %%esi
-      movw   %%ax,(%%edi)
-      addl   $2,%%edi
-      decl   %%ecx
-      jnz    merge_loopx
-    "
-    :
-    : "c" (320), "D" (_dest16+320*j), "S" (src8+320*j), "d" (lum8+320*j), "b" (table)
-    : "eax", "ebx", "ecx", "edx", "esi", "edi");
-}
-*/
-
 // ###############################################################
 //
 void mergeBitmap(BITMAP *dest16,BITMAP *img8,BITMAP *lum,COLOR_MAP8 table)
@@ -499,27 +463,9 @@ void mergeBitmap(BITMAP *dest16,BITMAP *img8,BITMAP *lum,COLOR_MAP8 table)
 
       for(i=0;i<len;i++)
       {
-      	*__dest++=table[*__light++][*__img++];	
+      	*__dest++ = table[*__light++][*__img++];	
       }
 
-/*
-    asm volatile("
-      xorl   %%eax,%%eax
-      merge_loopx:
-      movb   (%%edx),%%ah
-      movb   (%%esi),%%al
-      incl   %%edx
-      movw   (%%ebx,%%eax,2),%%ax
-      incl   %%esi
-      movw   %%ax,(%%edi)
-      addl   $2,%%edi
-      decl   %%ecx
-      jnz    merge_loopx
-    "
-    :
-    : "c" (len), "D" (__dest), "S" (__img), "d" (__light), "b" (table)
-    : "eax", "ebx", "ecx", "edx", "esi", "edi");
-*/    
     }
 }
 
@@ -637,21 +583,6 @@ void DrawColorPlasma(BITMAP * lum,int pos, double mul)
     	}
         
     }    
-/*    
-    __asm__ volatile ("
-      plasma_loopx:
-        movl   (%%ecx),%%eax
-        incl   %%ecx
-        addb   %%bl,%%al
-        movl   %%eax,(%%edi)
-        incl   %%edi
-      decl   %%esi
-      jnz    plasma_loopx
-    "
-    :
-    : "S" (lum->w), "D" (lum->line[j]), "c" (plasmax), "b" (plasmay[j])
-    : "eax", "ebx", "ecx", "edx", "esi", "edi");
-*/
 }
 
 
@@ -675,36 +606,7 @@ void MotionBlurMono(BITMAP *bmp,float intensity,int minimum)
      for(y=bmp->h-1;y>=0;y--)
      {
        p = bmp->line[y];
-/*       
-       asm volatile("
-         xorl   %%ebx,%%ebx
-         __MBlurLoop:
-           movl   (%%edi),%%eax
-
-           movb   %%al,%%bl
-           movb   (%%esi,%%ebx,1),%%dl
-           movb   %%ah,%%bl
-           movb   (%%esi,%%ebx,1),%%dh
-           bswapl %%eax
-           bswapl %%edx
-           movb   %%al,%%bl
-           movb   (%%esi,%%ebx,1),%%dl
-           movb   %%ah,%%bl
-           movb   (%%esi,%%ebx,1),%%dh
-           bswapl %%edx
-
-           movl   %%edx,(%%edi)
-           addl  $4,%%edi
-
-         decl %%ecx
-         jnz __MBlurLoop
-       "
-       :
-       : "c"(bmp->w/4), "D"(p), "S"(tabMBlur)
-       : "eax","ebx","ecx","edx","esi","edi"
-       );
-*/
-
+       
        for(x=319;x>=0;x--)
        {
          *p=tabMBlur[*p];
@@ -790,7 +692,6 @@ void PrecalkOmbre(void)
  S2Back = data[BFondLogo].dat;
  S2Logo = data[BLogo].dat;
  memcpy(S2BackPal,data[PFondLogo].dat,sizeof(PALETTE));
-// memcpy(S2BackPal,data[Pmap8A].dat,sizeof(PALETTE));
  halo1  = data[BHalo1].dat;
  halo2  = data[BHalo2].dat;
  halo3  = data[BHalo3].dat;
@@ -3089,7 +2990,7 @@ void Styler2Precalk(void)
 void Demo(void)
 {
 set_color_depth(16);
-  switch(UpdateMode)
+  /*switch(UpdateMode)
   {
     case UM_WIN:
         set_gfx_mode(GFX_AUTODETECT_WINDOWED,320,200,0,0);
@@ -3108,7 +3009,7 @@ set_color_depth(16);
     case UM_FULLSCREEN480b:
         set_gfx_mode(GFX_AUTODETECT_FULLSCREEN,640,480,0,0);
       break;
-  }
+  }*/
   clear(screen);
   buffer = create_bitmap(320, 200);
   buffer8 = create_bitmap_ex(8,320, 200);
@@ -3170,7 +3071,12 @@ void FatalError(char * error)
 int main(int argc, char ** argv)
 {
   int RR320x200x16=70000;
-  allegro_init();
+    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE) < 0)
+    {
+        fprintf(stderr, "Couldn't initialize SDL: %s\n", SDL_GetError());
+        exit(1);
+    }
+      allegro_init();
 
   printf("Styler 2 (c) KNIGHTS 1998\n  FINAL Version\n");
   printf("  ( Run with any parameter to run sound setup )\n");
@@ -3188,54 +3094,24 @@ int main(int argc, char ** argv)
   }
   
 
-  	install_timer ();	
+  	//install_timer ();	
 	install_keyboard ();
-	reserve_voices (20, -1);
-	
-#ifdef USE_JGMOD
+set_color_depth(16);
+  set_gfx_mode(GFX_AUTODETECT_WINDOWED, 320, 200, 0, 0);
 
-	if (install_sound (DIGI_AUTODETECT, MIDI_NONE, NULL) < 0)
-	{
-		printf ("Error initializing sound card");
-		return 1;
-	}
-
-	set_volume(128,0);
-
-	if (install_mod (20) < 0)	
-	{
-		printf ("Error setting digi voices");
-		return 1;
-	}
-#endif
-
-
-
-#ifdef USE_JGMOD
-
-	module = load_mod ("styler2.xm");
-	if (module == NULL)
-	{
-		printf ("Error reading styler2.xm");
-		return 1;
-	}
-	play_mod (module, TRUE);
-	set_mod_volume(128);
-    install_int(TimerHandler, 1000);
-#endif
+	    MusicStart("styler2.xm");
+    SDL_AddTimer(50, MusicUpdate, 0);
+    SDL_AddTimer(1000,TimerHandler, 0);
     
     Demo();
     
-
-#ifdef USE_JGMOD
-	stop_mod ();
-	destroy_mod (module);
-#endif
+    MusicStop();
+        
   set_color_depth(8);
 
-//  set_gfx_mode(GFX_AUTODETECT_WINDOWED, 640, 480, 0, 0);
+  set_gfx_mode(GFX_AUTODETECT_WINDOWED, 640, 480, 0, 0);
 
-  switch(UpdateMode)
+/*  switch(UpdateMode)
   {
     case UM_WIN:
     case UM_WIN2x:
@@ -3249,7 +3125,7 @@ int main(int argc, char ** argv)
         set_gfx_mode(GFX_AUTODETECT_FULLSCREEN,640,480,0,0);
       break;
   }
-
+*/
 
   PartScroll();
 
