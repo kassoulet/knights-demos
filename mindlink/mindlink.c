@@ -25,8 +25,6 @@
 #include <allegro.h>
 #include "data.h"
 
-#undef SAMPLE
-
 int SCREEN_WIDTH = 1280;
 int SCREEN_HEIGHT= 800;
 
@@ -37,6 +35,7 @@ extern void MusicStart(char *filename);
 extern void MusicStop();
 extern int MusicUpdate();
 extern void MusicSetPosition(int position);
+extern void MusicDump(char *filename);
 
 int quit = 0;
 int GetPosition(void)
@@ -58,46 +57,20 @@ Uint32 dump_active=0;
 int dump_frame=0;
 int dump_fps=30;
 
-/*
-void DumpFrameThread()
-{
-    char filename[1024];
-    Uint32 ticks, old=0;
-    int delay = 1000/dump_fps;
-    int diff;
-    PALETTE pal;
-    
-    while (dump_active) {
-    
-        do {
-            ticks = SDL_GetTicks();
-            diff = ticks-old;
-            if (diff > delay)
-                printf("frame skip!\n");
-            SDL_Delay(1);
-        } while (diff < delay);     
-        
-        get_palette(pal);
-        sprintf(filename, "dump/%08d.tga", dump_frame);
-        save_bitmap(filename, buffer, pal);
-        dump_frame++;
-        old = ticks;
-    }
-}*/
-
+BITMAP *screen_copy=NULL;
+PALETTE pal_copy;
 gzFile dumpfile;
 
 void _DumpFrame()
 {
     char filename[1024];
     char cmd[1024];
-    PALETTE pal;
     
-    get_palette(pal);
+    
     sprintf(filename, "dump/%08d.tga", dump_frame);
     dump_frame++;
     
-    save_bitmap(filename, screen, pal);
+    save_bitmap(filename, screen_copy, pal_copy);
     
     //sprintf(cmd, "convert -scale 50%% dump/%08d.tga dump/%08d.png ; rm dump/%08d.tga &", dump_frame, dump_frame, dump_frame);
     //system(cmd);
@@ -110,24 +83,71 @@ void _DumpFrame()
     }*/
 }
 
+Uint32 _old;
+
+#define DUMP_DELAY 20
+
+//Uint32 DumpFrame(Uint32 interval, void *param)
 void DumpFrame()
 {
+    Uint32 diff, ticks;
+    ticks = SDL_GetTicks();
+    diff = (ticks - _old);
+    
+    if (diff < DUMP_DELAY) {
+        return;
+        //printf("frame skip #%d (%dms)\n", dump_frame, diff);
+    }
+    _old = ticks;
+    blit(screen, screen_copy, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+    get_palette(pal_copy);
     SDL_CreateThread(_DumpFrame, 0);
+    //_DumpFrame();
+    //return interval;
 }
 
+/*
+void DumpFrameThread()
+{
+    char filename[1024];
+    Uint32 ticks, old=0;
+    int diff;
+    PALETTE pal;
+    
+    while (dump_active) {
+    
+        do {
+            ticks = SDL_GetTicks();
+            diff = ticks-old;
+            if (diff > DUMP_DELAY)
+                printf("skip frame %d (%d)\n", dump_frame, diff);
+            SDL_Delay(0);
+        } while (diff < DUMP_DELAY-1);     
+        
+        get_palette(pal);
+        sprintf(filename, "dump/%08d.tga", dump_frame);
+        save_bitmap(filename, buffer, pal);
+        dump_frame++;
+        old = ticks;
+    }
+}
+*/
 
 void DumpStart()
 {
     mkdir("dump", 0777);
     dump_active = 1;
-    //SDL_CreateThread(DumpFrame, 0);
+    //SDL_CreateThread(DumpFrameThread, 0);
     //dumpfile = gzopen("dump/dump.gz", "wb3");
 
-    SDL_AddTimer(20, DumpFrame, 0);
+    screen_copy = create_bitmap(SCREEN_W, SCREEN_H);
+
+    //SDL_AddTimer(DUMP_DELAY-10, DumpFrame, 0);
 }
 
 void DumpEnd()
 {
+    printf("%d frames saved!\n", dump_frame);
     dump_active = 0;
     //fclose(dumpfile);
     //gzclose(dumpfile);
@@ -154,18 +174,18 @@ int refreshRate;
 int finalScrollPosition;
 
 
-int TimerHandler(void)
+Uint32 TimerHandler(Uint32 interval, void *param)
 {
     VBLfps = VBLcount;
     VBLcount = 0;
     //printf("fps: %d\n", VBLfps);
-    return 1;
+    return interval;
 }
 
-int TimerHandler2(void)
+Uint32 TimerHandler2(Uint32 interval, void *param)
 {
     VBLframe++;
-    return 1;
+    return interval;
 }
 static Uint32 fps_count=0;
 static Uint32 fps_frames=0;
@@ -1324,6 +1344,8 @@ void PartWater(void)
         blit(_buffer, buffer, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         draw_trans_sprite(buffer, tortue2, x, (fsin((itofix((10*VBLframe)&255)))/2340)-27);
 
+        Update();
+
         // adjust contours
         /*line(old, 0, 0, 319, 0, 0);
         line(old, 0, 0, 0, 199, 0);
@@ -1337,7 +1359,6 @@ void PartWater(void)
         // and calculate it
         DrawWater(_buffer, old);
 
-        Update();
     }
 }
 
@@ -1841,6 +1862,8 @@ int main(int argc, char ** argv)
     DumpEnd();
 
     MusicStop();
+
+    //MusicDump("mindlink.xm");
 
     /* unload the datafile when we are finished with it */
     unload_datafile(data);
