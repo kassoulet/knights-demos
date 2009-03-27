@@ -24,6 +24,8 @@ int MusicUpdate()
     return 1;
 }
 
+init = 0;
+
 void MusicStart(char *filename)
 {
     md_mixfreq = 44100;
@@ -35,16 +37,14 @@ void MusicStart(char *filename)
     md_reverb   = 0;
 
     md_mode |= DMODE_INTERP;
-    md_mode |= DMODE_HQMIXER;
+    //md_mode |= DMODE_HQMIXER;
     md_mode |= DMODE_16BITS;
-    
 
-    MikMod_RegisterAllLoaders();
-    MikMod_RegisterAllDrivers();
-
-    //puts(MikMod_InfoDriver());
-    
-
+    if(!init) {
+        MikMod_RegisterAllLoaders();
+        MikMod_RegisterAllDrivers();
+        init = 1;
+    }
 
     MikMod_Init(NULL);
 
@@ -65,5 +65,17 @@ void MusicStop()
     MikMod_Exit();
 }
 
+void MusicDump(char *filename)
+{
+    puts("dumping music...");
+    md_device = MikMod_DriverFromAlias("wav");
+    MusicStart(filename);
+    module->loop = 0;
+    while (Player_Active())
+    {
+        MikMod_Update();
+    }
+    MusicStop();
+}
 
 
