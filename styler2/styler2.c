@@ -193,35 +193,6 @@ void Update(BITMAP * buffer)
 {
     WaitVBL();
     blit(buffer,screen,0,0,0,0,320,200);
-
-    /*
-      switch(UpdateMode)
-      {
-        case UM_WIN:
-        case UM_FULLSCREEN:
-          blit(buffer,screen,0,0,0,0,320,200);
-        break;
-
-        case UM_WIN2x:
-          stretch_blit(buffer,screen,0,0,320,200,0,0,640,400);
-        break;
-
-        case UM_FULLSCREEN240:
-          blit(buffer,screen,0,0,0,20,320,200);
-        break;
-
-        case UM_FULLSCREEN240b:
-          stretch_blit(buffer,screen,0,0,320,200,0,0,320,240);
-        break;
-
-        case UM_FULLSCREEN480:
-          stretch_blit(buffer,screen,0,0,320,200,0,40,640,400);
-        break;
-
-        case UM_FULLSCREEN480b:
-          stretch_blit(buffer,screen,0,0,320,200,0,0,640,480);
-        break;
-      }*/
 }
 
 
@@ -251,26 +222,26 @@ void TimerHandler(void)
 
 void WaitVBL()
 {
-    VBLframe = retrace_count;
+    VBLframe = SDL_GetTicks()/(1000/70);
     VBLcount++;
 
     VBLdelta = abs(VBLframe-VBLold);
     if (VBLfps>0)
         fVBLdelta = 50.0/VBLfps;
 
-    VBLold   = VBLframe;
+    VBLold = VBLframe;
 
-    if (VBLdelta<1)
+    /*if (VBLdelta<1)
     {
         int now=retrace_count;
         while (retrace_count<=now)
             rest(1);
-    }
+    }*/
 
     if (key[KEY_SPACE])
     {
         BITMAP * display;
-        char buf[16];
+        char buf[32];
         int i,j;
 
 
@@ -2974,7 +2945,7 @@ void testPlaques(void)
 void Styler2Precalk(void)
 {
     puts("  Styler 2 is being processed.");
-    printf("  ....\r  ");
+    printf("  ");
     PrecalkOmbre();
     printf(".");
     fflush(stdout);
