@@ -1,0 +1,8 @@
+*.o
+*.wav
+*.exe
+*~
+*.tar.*
+*.zip
+test*
+
