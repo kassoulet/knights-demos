@@ -35,13 +35,16 @@ void MusicStart(char *filename)
     md_reverb   = 0;
 
     md_mode |= DMODE_INTERP;
-    md_mode |= DMODE_HQMIXER;
+    //md_mode |= DMODE_HQMIXER;
     md_mode |= DMODE_16BITS;
 
     MikMod_RegisterAllLoaders();
     MikMod_RegisterAllDrivers();
-
+    
+    //printf(MikMod_InfoDriver());
     MikMod_Init(NULL);
+    
+    printf("\n  using '%s' driver\n", md_driver->Name);
 
     module = Player_Load(filename, 32, 0);
     if (module == NULL)

@@ -1508,7 +1508,7 @@ int main(int argc, char ** argv)
     char buf[80];
     int card, w, h;
     
-    printf("Styler (c) KNIGHTS 1998\n  FINAL Version\n");
+    printf("Styler (c) KNIGHTS 1998-2009\n  FINAL Version\n");
     printf("  ( Run with any parameter to run sound setup )\n");
     if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE) < 0)
     {
@@ -1543,6 +1543,7 @@ int main(int argc, char ** argv)
     printf(".");
     fflush(stdout);
 
+
     if (argc>1) 
     {
         int tokens;
@@ -1564,7 +1565,7 @@ int main(int argc, char ** argv)
     InitDemo();
 
     MusicStart("styler.xm");
-    SDL_AddTimer(100, MusicUpdate, 0);
+    SDL_AddTimer(50, MusicUpdate, 0);
     SDL_AddTimer(1000,TimerHandler, 0);
     
     Demo();
