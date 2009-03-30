@@ -41,6 +41,8 @@ extern void MusicStop();
 extern int MusicUpdate();
 extern void MusicSetPosition(int position);
 
+extern char *_image;
+
 int quit = 0;
 int GetPosition(void)
 {
@@ -192,7 +194,7 @@ void WaitVBL();
 void Update(BITMAP * buffer)
 {
     WaitVBL();
-    blit(buffer,screen,0,0,0,0,320,200);
+    blit(buffer,screen,0,0,0,0,SCREEN_W,SCREEN_H);
 }
 
 
@@ -407,10 +409,9 @@ void testFeedback2(void)
 // ###############################################################
 //
 void mergeBitmap(BITMAP *dest16,BITMAP *img8,BITMAP *lum,COLOR_MAP8 table)
-// 320x200x16 only !!!!
 {
-    static unsigned char  *__img,*__light;
-    static short *__dest;
+    unsigned char  *__img,*__light;
+    short *__dest;
     int j,len,h,i;
 
     len = dest16->w;
@@ -424,9 +425,6 @@ void mergeBitmap(BITMAP *dest16,BITMAP *img8,BITMAP *lum,COLOR_MAP8 table)
         h = img8->h;
     if (h>lum->h)
         h = lum->h;
-
-
-//    blit(lum,dest16,0,0,0,0,len,h);
 
     for (j = h-1;j >= 0;j--)
     {
@@ -598,19 +596,18 @@ void MotionBlurMono(BITMAP *bmp,float intensity,int minimum)
 //
 void drawLight( BITMAP * buffer, BITMAP * img, BITMAP * light, int x, int y)
 {
-// no clipping !!!
-
     int _x,_y,i,j,adder=0;
     int r1,r2,g1,g2,b1,b2,r,g,b;
     unsigned short * dest,* src, *blob;
 
     int clip_y1,clip_y2;
 
-    if ((x<=0) || (x>=(320-55)) || (y<=-50)|| (y>=190) /* || (y<=0)|| (y>=150)*/)
+    if ((x<=0) || (x>=(SCREEN_W-light->w)) || (y<=0)|| (y>=SCREEN_H-light->h) /* || (y<=0)|| (y>=150)*/)
         return;
 
     clip_y2 = 58;
     clip_y1 = 0;
+    /*
     if ((y<=0)&&(y>-50))
     {
         adder = 1-y;
@@ -618,7 +615,7 @@ void drawLight( BITMAP * buffer, BITMAP * img, BITMAP * light, int x, int y)
         clip_y1 = 0;
         y = 0;
     }
-    if ((y>=140) && (y<=190)) clip_y2 = 58-(y-140);
+    if ((y>=140) && (y<=SCREEN_H)) clip_y2 = 58-(y-140);*/
 
 
     for (_y=clip_y1 ; _y<clip_y2 ; _y++)
@@ -634,15 +631,15 @@ void drawLight( BITMAP * buffer, BITMAP * img, BITMAP * light, int x, int y)
 
             r1 = (i >> 11) & 0x1F;
             r2 = (j >> 11) & 0x1F;
-            r = MID(0,r1+r2,31);
+            r = MIN(r1+r2,31);
 
             g1 = (i >> 5) & 0x3F;
             g2 = (j >> 5) & 0x3F;
-            g = MID(0,g1+g2,63);
+            g = MIN(g1+g2,63);
 
             b1 = i & 0x1F;
             b2 = j & 0x1F;
-            b = MID(0,b1+b2,31);
+            b = MIN(b1+b2,31);
 
             *dest = (r << 11) | (g << 5) | b;
             src++;
@@ -654,6 +651,33 @@ void drawLight( BITMAP * buffer, BITMAP * img, BITMAP * light, int x, int y)
 }
 
 
+BITMAP* resize(BITMAP* src)
+{
+	BITMAP* tmp;
+	tmp = create_bitmap(SCREEN_W, SCREEN_H);
+	stretch_blit(src, tmp, 0, 0, src->w, src->h, 0, 0, 
+		SCALE_X*src->w, SCALE_Y*src->h);
+	return tmp;
+}
+
+RLE_SPRITE *resize_rle(RLE_SPRITE *src)
+{
+    BITMAP *tmp;
+    BITMAP *tmp2;
+	RLE_SPRITE *dest;
+    int i;
+
+    tmp = create_bitmap(src->w, src->h);
+    tmp2 = create_bitmap(SCREEN_W, SCREEN_H);
+    clear(tmp);
+    draw_rle_sprite(tmp, src, 0, 0);
+    stretch_blit(tmp, tmp2, 0, 0, src->w, src->h, 0, 0, 
+		SCALE_X*src->w, SCALE_Y*src->h);
+	dest = get_rle_sprite(tmp2);
+	destroy_bitmap(tmp);
+	destroy_bitmap(tmp2);
+	return dest;
+}
 
 // ###############################################################
 //
@@ -662,13 +686,13 @@ void PrecalkOmbre(void)
 {
     int i;
 
-    S2Back = data[BFondLogo].dat;
-    S2Logo = data[BLogo].dat;
+    S2Back = resize(data[BFondLogo].dat);
+    S2Logo = resize_rle(data[BLogo].dat);
     memcpy(S2BackPal,data[PFondLogo].dat,sizeof(PALETTE));
     halo1  = data[BHalo1].dat;
     halo2  = data[BHalo2].dat;
     halo3  = data[BHalo3].dat;
-    S2Ombre = data[BLogoOmbre].dat;
+    S2Ombre = /*resize_rle*/(data[BLogoOmbre].dat);
 
     precalcLuminosity(S2tableLum,S2BackPal);
     for (i = 0xffff;i >= 0;i--)
@@ -678,7 +702,6 @@ void PrecalkOmbre(void)
         if (c<0) c=0;
         S2tableOmbre.data[i>>8][i&255] = c;
     }
-
 }
 
 
@@ -694,11 +717,11 @@ typedef struct TLightPosition
 
 void CalcLightPlace(struct TLightPosition * lp, int angle, int dist)
 {
-    lp->lx = 130+fixtoi(dist*fcos(itofix(-angle)));
-    lp->ly = 70+fixtoi(dist*fsin(itofix(-angle)));
+    lp->lx = SCALE_X*130+fixtoi(SCALE_X*dist*fcos(itofix(-angle)));
+    lp->ly = SCALE_Y*70 +fixtoi(SCALE_Y*dist*fsin(itofix(-angle)));
 
-    lp->ox = fixtoi(1*dist*fcos(itofix(-angle+128)));
-    lp->oy = fixtoi(1*dist*fsin(itofix(-angle+128)));
+    lp->ox = fixtoi(SCALE_X*dist*fcos(itofix(-angle+128)));
+    lp->oy = fixtoi(SCALE_Y*dist*fsin(itofix(-angle+128)));
 }
 
 // ###############################################################
@@ -717,15 +740,13 @@ void PartOmbre(void)
     int delta=0;
     int j;
 
-    lum  = create_bitmap_ex(8,320,200);
+    lum  = create_bitmap_ex(8,SCREEN_W,SCREEN_H);
     clear(buffer);
     clear(screen);
     color_map = &S2tableOmbre;
 
-
     while (!partEnd)
     {
-
         lumFond += VBLdelta;
         lumFond = MID(0,lumFond,127);
 
@@ -775,22 +796,18 @@ void PartOmbre(void)
         if ((GetPosition()>=0x0300))
         {
             int y;
-//    alpha=(GetPosition()&255)*4;
+
             if (alpha<255)
                 alpha=MID(0,VBLframe-delta,255);
 
             opacity = 255-alpha;
             set_trans_blender(0,0,0,alpha);
 
-//      lumFond += VBLdelta;
-//      lumFond = MID(0,lumFond,255);
-
-//      draw_trans_sprite(buffer,data[BKnightsBack].dat,0,0);
-            for (y=0;y<200;y++)
+            for (y=0;y<SCREEN_H;y++)
             {
                 int i;
                 i = opacity*(opacity+y)/256;
-                line(lum,0,y,319,y,MID(0,i,128));
+                line(lum,0,y,SCREEN_W-1,y,MID(0,i,128));
             }
 
         }
@@ -2987,9 +3004,16 @@ void Demo(void)
           set_gfx_mode(GFX_AUTODETECT_FULLSCREEN,640,480,0,0);
         break;
     }*/
+    
+    SCALE_X = SCREEN_W/320.0;
+    SCALE_Y = SCREEN_H/200.0;        
+    
     clear(screen);
-    buffer = create_bitmap(320, 200);
-    buffer8 = create_bitmap_ex(8,320, 200);
+    buffer = create_bitmap(SCREEN_W, SCREEN_H);
+    buffer8 = create_bitmap_ex(8, SCREEN_W, SCREEN_H);
+
+	_image = malloc(SCREEN_W*SCREEN_H);
+
 
     /* load the datafile into memory */
     set_color_conversion(COLORCONV_NONE);
@@ -3074,7 +3098,7 @@ int main(int argc, char ** argv)
     //install_timer ();
     install_keyboard ();
     set_color_depth(16);
-    set_gfx_mode(GFX_AUTODETECT_WINDOWED, 320, 200, 0, 0);
+    set_gfx_mode(GFX_AUTODETECT_WINDOWED, 640, 400, 0, 0);
 
 
     MusicStart("styler2.xm");
