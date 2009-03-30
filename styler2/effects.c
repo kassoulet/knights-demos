@@ -17,7 +17,7 @@
 
 
 char _map[256*256];
-char _image[320*200];
+char *_image;
 
 void SetTunnelMap(BITMAP * bmp)
 {
