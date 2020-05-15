@@ -7,3 +7,10 @@
 test*
 styler/knights-styler-ng*
 nautilus-folder-actions
+sc2/compile
+sc2/config.log
+sc2/config.status
+sc2/src/data/bmp_*.c
+sc2/src/data/music.c
+Makefile.in
+
