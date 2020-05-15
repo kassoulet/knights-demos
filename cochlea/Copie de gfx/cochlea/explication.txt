@@ -1,0 +1,44 @@
+le fond :
+
+01101101.bmp : le fond, a duppliquer sur la totalité de l'écran et a faire défiler vers le haut assez rapidement
+par dessus faire un effet de lignes blanches de 1 a 2 pixel en alphablending
+au depart , un fade alphablending de 0 et 50% d'opacité
+décaler les lignes de 1 a 2 pixels vers le haut ou le bas entre 1/2 et 2 seconde
+faire disparaitre la ligne en fade alphablending
+il faut qu'il y est entre 3 et 10 lignes constament
+
+a partir de l'écran 2 :
+faire défiler vers la gauche un texte, ecrit avec le fichier backdot.bmp en alphablending (enfin, plus du highlighted mais je sais pas si c'est faisable)
+A =   ° ° °
+      °    °
+      ° ° °
+      °    °
+enfin, tu vois le truc !! si il te faut une table de caracteres demande moi, je te la fait !!!
+
+le logo :
+
+en fond, les fichiers cochleaback01.bmp et cochleaback02.bmp en alpha inversé (je sais pas si c'est faisable, dit moi si ca va pas) 
+les deux éléments ce déplace de droite a gauche et de gauche a droite façon vague mais seulement a l'horizontale et ils sont inversé (quand l'un va a gauche, l'autre va a droite)
+
+ensuite, il y a le blurcochlea.bmp en alphablending a 50% d'opacité puis le alphacochlea.bmp en alpha en 100%
+
+les nanas :
+
+nana01.bmp et nana02.bmp : no comment
+
+le blazon :
+
+epeeombre en alphablending inversé
+epee.bmp par dessus
+
+essai de faire un effet de drapeau (wave) sur la texture blazon.bmp par dessus ca le ferai !!
+
+
+il faudrait que tu me fasse comme avec la stylerIII, faire un exe avec les bitmaps séparé. 
+
+bon code, MarbleMad
+
+ps: j'espere que tu m'as a encore fait travailler pour rien ;-)
+
+
+
