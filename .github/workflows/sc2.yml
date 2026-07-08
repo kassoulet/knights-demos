@@ -14,9 +14,10 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
+          sudo apt-get remove -y libsdl1.2-dev libgl-dev libglu-dev 2>/dev/null || true
           sudo apt-get install -y autoconf automake libtool nasm gcc-multilib
           sudo apt-get install -y libsdl1.2-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386
       - name: Configure
-        run: chmod +x autogen.sh && ./autogen.sh && CFLAGS="-m32 -fcommon" ./configure
+        run: chmod +x autogen.sh && CFLAGS="-m32 -fcommon" ./autogen.sh && CFLAGS="-m32 -fcommon" ./configure
       - name: Build
-        run: make CFLAGS="-m32 -fcommon"
+        run: make
