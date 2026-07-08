@@ -1,4 +1,4 @@
-![KNIGHTS](https://knights.untergrund.net/k.png)
+![KNIGHTS](knights-logo.png)
 
 # KNIGHTS Demos
 
