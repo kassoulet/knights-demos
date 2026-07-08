@@ -2,6 +2,8 @@
 #AM_CFLAGS = -I..
 libdata_a_CFLAGS = -I..
 
+SUBDIRS = src
+
 noinst_LIBRARIES = libdata.a
 
 libdata_a_SOURCES = bmp_knights.c    bmp_title.c \

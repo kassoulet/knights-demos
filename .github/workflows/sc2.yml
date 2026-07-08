@@ -19,5 +19,9 @@ jobs:
           sudo apt-get install -y libsdl1.2-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386
       - name: Configure
         run: chmod +x autogen.sh && CFLAGS="-m32 -fcommon" ./autogen.sh && CFLAGS="-m32 -fcommon" ./configure
+      - name: Generate data sources
+        run: |
+          gcc -m32 src/data/src/convert.c -o src/data/src/convert $(sdl-config --cflags) $(sdl-config --libs)
+          (cd src/data/src && ./convert)
       - name: Build
         run: make
