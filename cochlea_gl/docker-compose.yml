@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  cochlea_gl:
+    build: .
+    container_name: cochlea_gl
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+    volumes:
+      # Mount X11 socket for GUI display
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # Mount current directory with the application
+      - ./:/app
+    devices:
+      # Allow access to graphics card
+      - /dev/dri:/dev/dri
+    cap_add:
+      # Add capabilities for graphics
+      - SYS_ADMIN
+    security_opt:
+      # Allow privileged access for graphics
+      - seccomp:unconfined
+    network_mode: host
+    stdin_open: true
+    tty: true
+    command: /app/start.sh
