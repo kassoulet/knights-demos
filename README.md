@@ -1,3 +1,5 @@
+![KNIGHTS](https://knights.untergrund.net/k.png)
+
 # KNIGHTS Demos
 
 [KNIGHTS](https://knights.untergrund.net/) is a French PC [demoscene](https://en.wikipedia.org/wiki/Demoscene) group founded in 1996, mostly inactive since 2004. This repository contains modern ports, rebuilds, and source releases of their productions.
