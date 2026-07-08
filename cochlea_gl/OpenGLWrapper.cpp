@@ -72,19 +72,10 @@ bool OpenGLRenderer::Initialize(int w, int h, const char* title, bool fullscreen
     // Set up viewport
     glViewport(0, 0, width, height);
     
-    // Enable blending by default
-    glEnable(GL_BLEND);
     blendEnabled = true;
     srcBlend = GL_SRC_ALPHA;
     dstBlend = GL_ONE_MINUS_SRC_ALPHA;
-    glBlendFunc(srcBlend, dstBlend);
-    
-    // Enable texture mapping
-    glEnable(GL_TEXTURE_2D);
     textureEnabled = true;
-    
-    // Set up orthographic projection for 2D rendering
-    SetupOrthographicProjection();
     
     g_pRenderer = this;
     return true;
@@ -139,14 +130,6 @@ void OpenGLRenderer::EndScene() {
 void OpenGLRenderer::Present() {
     SDL_GL_SwapWindow(window);
     SDL_PumpEvents(); // Process events
-}
-
-void OpenGLRenderer::SetupOrthographicProjection() {
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, width, height, 0, -1, 1);  // Direct3D-style coordinate system
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 }
 
 GLuint OpenGLRenderer::LoadTexture(const std::string& filename) {
@@ -339,7 +322,3 @@ void OpenGLRenderer::DrawPrimitive(int primitiveType, const std::vector<Vertex>&
     glEnd();
 }
 
-void D3DToGLMatrix(float* d3dMatrix) {
-    // Convert Direct3D matrix to OpenGL format if needed
-    // Direct3D and OpenGL have different coordinate systems
-}

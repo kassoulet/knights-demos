@@ -62,13 +62,9 @@ private:
     bool textureEnabled;
     GLuint currentTexture;
 
-    void SetupOrthographicProjection();
 };
 
 // Global renderer instance
 extern OpenGLRenderer* g_pRenderer;
-
-// Compatibility functions for Direct3D-style operations
-void D3DToGLMatrix(float* d3dMatrix);
 
 #endif // OPENGL_WRAPPER_H

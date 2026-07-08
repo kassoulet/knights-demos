@@ -106,8 +106,6 @@ HRESULT App_FrameMove(float fTimeKey);
 HRESULT App_Render();
 HRESULT App_InitDeviceObjects();
 HRESULT App_FinalCleanup();
-HRESULT App_RestoreSurfaces();
-HRESULT App_ConfirmDevice();
 
 int main(int argc, char* argv[]) {
     // Parse command-line arguments

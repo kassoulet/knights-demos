@@ -112,88 +112,8 @@ BOOL MIDASaddPostProcessor(MIDASpostProcessor *postProc, unsigned procPos, void 
 BOOL MIDASremovePostProcessor(MIDASpostProcessor *postProc) { return TRUE; }
 BOOL MIDASfreeModule(MIDASmodule module) { return TRUE; }
 
-#else
-// Define stubs when MUSIC is not defined
-int MIDASgetLastError(void) { return 0; }
-char* MIDASgetErrorMessage(int errorCode) { return (char*)"No error"; }
-DWORD MIDASgetDisplayRefreshRate(void) { return 60; }
-BOOL MIDASstartup(void) { return TRUE; }
-BOOL MIDASdetectSD(void) { return TRUE; }
-BOOL MIDASdetectSoundCard(void) { return TRUE; }
-BOOL MIDASconfig(void) { return TRUE; }
-BOOL MIDASloadConfig(char *fileName) { return TRUE; }
-BOOL MIDASsaveConfig(char *fileName) { return TRUE; }
-BOOL MIDASreadConfigRegistry(DWORD key, char *subKey) { return TRUE; }
-BOOL MIDASwriteConfigRegistry(DWORD key, char *subKey) { return TRUE; }
-BOOL MIDASinit(void) { return TRUE; }
-BOOL MIDASsetOption(int option, DWORD value) { return TRUE; }
-DWORD MIDASgetOption(int option) { return 0; }
-BOOL MIDASclose(void) { return TRUE; }
-BOOL MIDASsuspend(void) { return TRUE; }
-BOOL MIDASresume(void) { return TRUE; }
-BOOL MIDASopenChannels(int numChannels) { return TRUE; }
-BOOL MIDAScloseChannels(void) { return TRUE; }
-BOOL MIDASsetAmplification(DWORD amplification) { return TRUE; }
-BOOL MIDASstartBackgroundPlay(DWORD pollRate) { return TRUE; }
-BOOL MIDASstopBackgroundPlay(void) { return TRUE; }
-BOOL MIDASpoll(void) { return TRUE; }
-void MIDASlock(void) { }
-void MIDASunlock(void) { }
-char* MIDASgetVersionString(void) { return (char*)"1.0"; }
-BOOL MIDASsetTimerCallbacks(DWORD rate, BOOL displaySync, void (MIDAS_CALL *preVR)(), void (MIDAS_CALL *immVR)(), void (MIDAS_CALL *inVR)()) { return TRUE; }
-BOOL MIDASremoveTimerCallbacks(void) { return TRUE; }
-DWORD MIDASallocateChannel(void) { return 0; }
-BOOL MIDASfreeChannel(DWORD channel) { return TRUE; }
-MIDASmodule MIDASloadModule(char *fileName) { return (MIDASmodule)1; }
-MIDASmodulePlayHandle MIDASplayModule(MIDASmodule module, BOOL loopSong) { return (MIDASmodulePlayHandle)1; }
-MIDASmodulePlayHandle MIDASplayModuleSection(MIDASmodule module, unsigned startPos, unsigned endPos, unsigned restartPos, BOOL loopSong) { return (MIDASmodulePlayHandle)1; }
-BOOL MIDASstopModule(MIDASmodulePlayHandle playHandle) { return TRUE; }
-BOOL MIDASgetPlayStatus(MIDASmodulePlayHandle playHandle, MIDASplayStatus *status) {
-    if (status) {
-        status->position = 0;
-        status->pattern = 0;
-        status->row = 0;
-        status->syncInfo = 0;
-        status->songLoopCount = 0;
-    }
-    return TRUE;
-}
-BOOL MIDASsetPosition(MIDASmodulePlayHandle playHandle, int newPosition) { return TRUE; }
-BOOL MIDASsetMusicVolume(MIDASmodulePlayHandle playHandle, unsigned volume) { return TRUE; }
-BOOL MIDASgetModuleInfo(MIDASmodule module, MIDASmoduleInfo *info) { return TRUE; }
-BOOL MIDASgetInstrumentInfo(MIDASmodule module, int instNum, MIDASinstrumentInfo *info) { return TRUE; }
-BOOL MIDASsetMusicSyncCallback(MIDASmodulePlayHandle playHandle, void (MIDAS_CALL *callback)(unsigned syncInfo, unsigned position, unsigned row)) { return TRUE; }
-BOOL MIDASfadeMusicChannel(MIDASmodulePlayHandle playHandle, unsigned channel, unsigned fade) { return TRUE; }
-MIDASsample MIDASloadRawSample(char *fileName, int sampleType, int loopSample) { return (MIDASsample)1; }
-MIDASsample MIDASloadWaveSample(char *fileName, int loopSample) { return (MIDASsample)1; }
-BOOL MIDASfreeSample(MIDASsample sample) { return TRUE; }
-BOOL MIDASallocAutoEffectChannels(unsigned numChannels) { return TRUE; }
-BOOL MIDASfreeAutoEffectChannels(void) { return TRUE; }
-MIDASsamplePlayHandle MIDASplaySample(MIDASsample sample, unsigned channel, int priority, unsigned rate, unsigned volume, int panning) { return (MIDASsamplePlayHandle)1; }
-BOOL MIDASstopSample(MIDASsamplePlayHandle sample) { return TRUE; }
-BOOL MIDASsetSampleRate(MIDASsamplePlayHandle sample, unsigned rate) { return TRUE; }
-BOOL MIDASsetSampleVolume(MIDASsamplePlayHandle sample, unsigned volume) { return TRUE; }
-BOOL MIDASsetSamplePanning(MIDASsamplePlayHandle sample, int panning) { return TRUE; }
-BOOL MIDASsetSamplePriority(MIDASsamplePlayHandle sample, int priority) { return TRUE; }
-DWORD MIDASgetSamplePlayStatus(MIDASsamplePlayHandle sample) { return 0; }
-MIDASstreamHandle MIDASplayStreamFile(char *fileName, unsigned sampleType, unsigned sampleRate, unsigned bufferLength, int loopStream) { return (MIDASstreamHandle)1; }
-BOOL MIDASstopStream(MIDASstreamHandle stream) { return TRUE; }
-MIDASstreamHandle MIDASplayStreamWaveFile(char *fileName, unsigned bufferLength, int loopStream) { return (MIDASstreamHandle)1; }
-MIDASstreamHandle MIDASplayStreamPolling(unsigned sampleType, unsigned sampleRate, unsigned bufferLength) { return (MIDASstreamHandle)1; }
-unsigned MIDASfeedStreamData(MIDASstreamHandle stream, unsigned char *data, unsigned numBytes, BOOL feedAll) { return 0; }
-BOOL MIDASsetStreamRate(MIDASstreamHandle stream, unsigned rate) { return TRUE; }
-BOOL MIDASsetStreamVolume(MIDASstreamHandle stream, unsigned volume) { return TRUE; }
-BOOL MIDASsetStreamPanning(MIDASstreamHandle stream, int panning) { return TRUE; }
-DWORD MIDASgetStreamBytesBuffered(MIDASstreamHandle stream) { return 0; }
-BOOL MIDASpauseStream(MIDASstreamHandle stream) { return TRUE; }
-BOOL MIDASresumeStream(MIDASstreamHandle stream) { return TRUE; }
-MIDASechoHandle MIDASaddEchoEffect(MIDASechoSet *echoSet) { return (MIDASechoHandle)1; }
-BOOL MIDASremoveEchoEffect(MIDASechoHandle echoHandle) { return TRUE; }
-BOOL MIDASaddPostProcessor(MIDASpostProcessor *postProc, unsigned procPos, void *userData) { return TRUE; }
-BOOL MIDASremovePostProcessor(MIDASpostProcessor *postProc) { return TRUE; }
 #endif
 
-typedef unsigned short word;
 
 //-----------------------------------------------------------------------------
 // Declare the application globals for use
@@ -279,8 +199,6 @@ int MIDASgetPosition(void)
 
 void Rotozoom(char * map, float angle, float zoom, float xoffset, float yoffset, float alpha)
 {
-    #define PI 3.141592654
-
     g_pRenderer->BindTexture(g_pRenderer->LoadTexture(map));
 
     if (alpha == 1.0f) {
@@ -309,42 +227,11 @@ void Rotozoom(char * map, float angle, float zoom, float xoffset, float yoffset,
     ru[3] = 3.5+z*cos(RAD(a+128.0))	+x;
     rv[3] = 3.5+z*sin(RAD(a+128.0))	+y;
 
-    float c1[4], c2[4], c3[4], c4[4];
-
-    a = 0.5+0.5*sin(RAD(VBLframe));
-    a = alpha;
-
-    c1[0] = 0.5+0.5*cos(RAD(VBLframe*0.27));
-    c1[1] = 0.5+0.5*cos(RAD(VBLframe*0.96));
-    c1[2] = 0.5+0.5*cos(RAD(VBLframe*7.26));
-    c1[3] = a;
-
-    c2[0] = 0.5+0.5*cos(RAD(VBLframe*0.02));
-    c2[1] = 0.5+0.5*cos(RAD(VBLframe*0.94));
-    c2[2] = 0.5+0.5*cos(RAD(VBLframe*0.34));
-    c2[3] = a;
-
-    c3[0] = 0.5+0.5*cos(RAD(VBLframe*5.62));
-    c3[1] = 0.5+0.5*cos(RAD(VBLframe*4.26));
-    c3[2] = 0.5+0.5*cos(RAD(VBLframe*0.43));
-    c3[3] = a;
-
-    c4[0] = 0.5+0.5*cos(RAD(VBLframe*0.71));
-    c4[1] = 0.5+0.5*cos(RAD(VBLframe*2.65));
-    c4[2] = 0.5+0.5*cos(RAD(VBLframe*0.81));
-    c4[3] = a;
-
-    // Set all colors to white for now
-    c1[0] = c1[1] = c1[2] = c1[3] = 1.0f;
-    c2[0] = c2[1] = c2[2] = c2[3] = 1.0f;
-    c3[0] = c3[1] = c3[2] = c3[3] = 1.0f;
-    c4[0] = c4[1] = c4[2] = c4[3] = 1.0f;
-
     Vertex grille[4];
-    grille[0] = {g_pRenderer->GetWidth()/2.0f, g_pRenderer->GetHeight(), 0.99f, 1.0f, c1[0], c1[1], c1[2], c1[3], ru[0], rv[0]};
-    grille[1] = {g_pRenderer->GetWidth()/2.0f, 0.0f, 0.99f, 1.0f, c2[0], c2[1], c2[2], c2[3], ru[1], rv[1]};
-    grille[2] = {g_pRenderer->GetWidth(), g_pRenderer->GetHeight(), 0.99f, 1.0f, c3[0], c3[1], c3[2], c3[3], ru[2], rv[2]};
-    grille[3] = {g_pRenderer->GetWidth(), 0.0f, 0.99f, 1.0f, c4[0], c4[1], c4[2], c4[3], ru[3], rv[3]};
+    grille[0] = {g_pRenderer->GetWidth()/2.0f, g_pRenderer->GetHeight(), 0.99f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, ru[0], rv[0]};
+    grille[1] = {g_pRenderer->GetWidth()/2.0f, 0.0f, 0.99f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, ru[1], rv[1]};
+    grille[2] = {g_pRenderer->GetWidth(), g_pRenderer->GetHeight(), 0.99f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, ru[2], rv[2]};
+    grille[3] = {g_pRenderer->GetWidth(), 0.0f, 0.99f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, ru[3], rv[3]};
 
     std::vector<Vertex> vertices(grille, grille + 4);
     g_pRenderer->DrawPrimitive(D3DPT_TRIANGLESTRIP, vertices);
@@ -376,12 +263,6 @@ void DrawZoomSprite(char * sprite, float x1, float y1, float x2, float y2, float
 
 void DrawAddSprite(char * sprite, float x1, float y1, float x2, float y2, float a1, float a2)
 {
-    static std::string lastSprite = "";
-    if (std::string(sprite) != lastSprite) {
-        std::cout << "DrawAddSprite: " << sprite << " (" << x1 << "," << y1 << ") to (" << x2 << "," << y2 << ")" << std::endl;
-        lastSprite = sprite;
-    }
-
     g_pRenderer->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, TRUE);
     g_pRenderer->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_ONE);
     g_pRenderer->SetRenderState(D3DRENDERSTATE_DESTBLEND, D3DBLEND_ONE);
@@ -401,12 +282,6 @@ void DrawAddSprite(char * sprite, float x1, float y1, float x2, float y2, float 
 
 void DrawBackground(char * sprite, float zoom)
 {
-    static std::string lastSprite = "";
-    if (std::string(sprite) != lastSprite) {
-        std::cout << "DrawBackground: " << sprite << " zoom=" << zoom << std::endl;
-        lastSprite = sprite;
-    }
-
     float x1,y1,x2,y2;
 
     x1=g_pRenderer->GetWidth()/2.0f - zoom*(g_pRenderer->GetWidth()/2.0f);
@@ -555,15 +430,15 @@ HRESULT App_OneTimeSceneInit()
 
     for( i=0; i<NUM_FIREPARTICLES; i++ )
     {
-			fireParticle[i].y=rand()%480;
-			fireParticle[i].x=rand()%640;
+			fireParticle[i].y=rand()%g_pRenderer->GetHeight();
+			fireParticle[i].x=rand()%g_pRenderer->GetWidth();
 			fireParticle[i].c=200+(rand()%50);
 			fireParticle[i].v=(10+rand()%50)/30.0;
 		}
 
     for( i=0; i<NUM_VIOLETPARTICLES; i++ )
     {
-			violetParticle[i].y=rand()%480;
+			violetParticle[i].y=rand()%g_pRenderer->GetHeight();
 			violetParticle[i].x=rand()%200;
 			violetParticle[i].c=8+(rand()%32);
 			violetParticle[i].v=(10+(rand()%100))/50.0;
@@ -600,7 +475,6 @@ HRESULT App_OneTimeSceneInit()
 HRESULT App_FrameMove(FLOAT fTimeKey)
 {
 	static float old;
-    static int logCounter = 0;
 
 	VBLframe = 30.0*fTimeKey;
 
@@ -610,10 +484,6 @@ HRESULT App_FrameMove(FLOAT fTimeKey)
 	if (VBLdelta>100)
 		VBLdelta=0;
 
-    if (logCounter++ % 60 == 0) {
-        std::cout << "Frame: " << VBLframe << " Delta: " << VBLdelta << " Song Pos: 0x" << std::hex << MIDASgetPosition() << std::dec << std::endl;
-    }
-
 	return S_OK;
 }
 
@@ -622,8 +492,6 @@ void PartBegin()
 		static float a=1.0;
 		static float zt=1.0;
 		static float z=0.0;
-        static bool logged = false;
-        if (!logged) { std::cout << "Entering PartBegin" << std::endl; logged = true; }
 
 		if (MIDASgetPosition()>0x0420)
 		{
@@ -841,8 +709,6 @@ Flare flares[NUM_FLARES]={{507,133},{525,117},{595,75},{326,116},{297,141},{218,
 
 void PartFire()
 {
-	static Flare flare={0,0,1024};
-
 	DrawBackground("knights.bmp", 1.0);
 
 	int n;
@@ -872,11 +738,11 @@ void PartFire()
 			fireParticle[i].y-=fireParticle[i].v*VBLdelta*2.0;
 			fireParticle[i].c-=fireParticle[i].v*VBLdelta*0.8*2.0;
 
-			if (fireParticle[i].y <= 200.0)
+			if (fireParticle[i].y <= g_pRenderer->GetHeight()*0.42f)
 			{
 				fireParticle[i].c=100+(rand()%150);
-				fireParticle[i].y=480+32/*+(rand()%50)*/;
-				fireParticle[i].x=rand()%640;
+				fireParticle[i].y=g_pRenderer->GetHeight()+32;
+				fireParticle[i].x=rand()%g_pRenderer->GetWidth();
 				fireParticle[i].v=(10+(rand()%100))/50.0;
 			}
 
@@ -988,16 +854,6 @@ void PartPhantasm()
 			alpha=0.7;
 	}
 
-	if ((GetAsyncKeyState(VK_UP)&0xf000))
-		power+=0.1;
-	if ((GetAsyncKeyState(VK_DOWN)&0xf000))
-		power-=0.1;
-
-	if ((GetAsyncKeyState(VK_RIGHT)&0xf000))
-		alpha+=0.01;
-	if ((GetAsyncKeyState(VK_LEFT)&0xf000))
-		alpha-=0.01;
-
 	if (power<0)
 		power = 0;
 
@@ -1068,12 +924,10 @@ void PartPhantasm()
 				  violetParticle[i].c=8+(rand()%32);
 				else
 				  violetParticle[i].c=8+(rand()%8);
-				violetParticle[i].y=480+32+(rand()%50);
+				violetParticle[i].y=g_pRenderer->GetHeight()+32+(rand()%50);
 				violetParticle[i].x=40+(rand()%160);
-				violetParticle[i].v=(30+(rand()%80))/20.0;   //violetParticle[i].c;
+				violetParticle[i].v=(30+(rand()%80))/20.0;
 			}
-
-			static float a=0.0;
 
 			x = 120.0+80.0*sin((violetParticle[i].x+violetParticle[i].y+3.0*sin(VBLframe*0.01))*3.1415927*2.0/300.0);
 			y = violetParticle[i].y;
@@ -1137,16 +991,6 @@ void PartPurple()
 		if (alphamap>1.0)
 			alphamap = 1.0;
 	}
-
-	if ((GetAsyncKeyState(VK_UP)&0xf000))
-		power+=0.01;
-	if ((GetAsyncKeyState(VK_DOWN)&0xf000))
-		power-=0.01;
-
-	if ((GetAsyncKeyState(VK_RIGHT)&0xf000))
-		alpha+=0.01;
-	if ((GetAsyncKeyState(VK_LEFT)&0xf000))
-		alpha-=0.01;
 
 	if (alpha<0)
 		alpha = 0;
@@ -1222,8 +1066,6 @@ for(n=0;n<4;n++)
 			float a1=alphamap,z=40.0;
 			float x1,y1,x2,y2;
 
-			line[y*80+a*2+0];
-
 			g_Mesh[0] = line[(y-1)*80+(a-1)*2+1];
 			g_Mesh[0].tu=(a)/z;
 			g_Mesh[0].tv=(y)/z;
@@ -1264,7 +1106,6 @@ for(n=0;n<4;n++)
             g_pRenderer->DrawPrimitive(D3DPT_TRIANGLELIST, vertices);
 		}
 
-	  g_pRenderer->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, TRUE);
 		g_pRenderer->BindTexture(g_pRenderer->LoadTexture("light.bmp"));
 		std::vector<Vertex> lineVertices(line, line + 2*40*40);
 		g_pRenderer->DrawPrimitive(D3DPT_LINELIST, lineVertices);
@@ -1285,11 +1126,6 @@ HRESULT App_Render()
     g_pRenderer->BeginScene();
 
     uint32_t pos = MIDASgetPosition();
-    static uint32_t lastLoggedPos = 0xFFFFFFFF;
-    if (pos >> 8 != lastLoggedPos >> 8) {
-        std::cout << "App_Render: Song Pos 0x" << std::hex << pos << std::dec << std::endl;
-        lastLoggedPos = pos;
-    }
 
     if( (pos>=0x0000) && (pos<0x0500) )
 		PartBegin();
@@ -1304,10 +1140,6 @@ HRESULT App_Render()
 	else if( (pos>=0x2100) && (pos<0x3000) )
 		PartScroll();
     else {
-        static int skipCounter = 0;
-        if (skipCounter++ % 60 == 0) {
-            std::cout << "No part for position 0x" << std::hex << pos << std::dec << std::endl;
-        }
     }
 
     g_pRenderer->EndScene();
@@ -1423,23 +1255,3 @@ void App_DeleteDeviceObjects()
     // In OpenGL, textures are managed by the renderer
 }
 
-//-----------------------------------------------------------------------------
-// Name: App_RestoreSurfaces
-// Desc: Restores any previously lost surfaces. Must do this for all surfaces
-//       (including textures) that the app created.
-//-----------------------------------------------------------------------------
-HRESULT App_RestoreSurfaces()
-{
-	return S_OK;
-}
-
-//-----------------------------------------------------------------------------
-// Name: App_ConfirmDevice()
-// Desc: Called during device intialization, this code checks the device
-//       for some minimum set of capabilities
-//-----------------------------------------------------------------------------
-HRESULT App_ConfirmDevice()
-{
-    // In OpenGL, we don't need to check device capabilities like in Direct3D
-    return S_OK;
-}
