@@ -36,7 +36,30 @@ void FSOUND_MixerClipCopy_Float32(void *dest, void *src, long len)
   }
 #else
 #ifdef __GNUC__
-  asm(
+#if __x86_64__
+  asm volatile(
+    ".DoLoop:                 \n"
+    "flds (%1)                \n"
+    "fistpl %3                \n"
+    "addl $4, %k1             \n"
+    "movl %3, %%eax           \n"
+    "cmpl $32767, %%eax       \n"
+    "jle .MaxOk               \n"
+    "movl $32727, %%eax       \n"
+    ".MaxOk:                  \n"
+    "cmpl $-32768, %%eax      \n"
+    "jge .MinOk               \n"
+    "movl $-32728, %%eax      \n"
+    ".MinOk:                  \n"
+    "movw %%ax, (%2)          \n"
+    "addl $2, %k2             \n"
+    "decl %k0                 \n"
+    "jnz .DoLoop              \n"
+    :
+    :"c" (len<<1), "S"(src), "D"(dest), "m"(temp)
+    :"eax", "cc");
+#else
+  asm volatile(
     ".DoLoop:                 \n"
     "flds (%1)                \n"
     "fistpl %3                \n"
@@ -56,7 +79,8 @@ void FSOUND_MixerClipCopy_Float32(void *dest, void *src, long len)
     "jnz .DoLoop              \n"
     :
     :"c" (len<<1), "S"(src), "D"(dest), "m"(temp)
-    :"eax");
+    :"eax", "cc");
+#endif
 #endif
 #ifdef _MSC_VER
   for (temp = 0; temp < (len<<1); temp++)
