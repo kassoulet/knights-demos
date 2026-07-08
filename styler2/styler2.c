@@ -533,17 +533,17 @@ void DrawColorPlasma(BITMAP * lum,int pos, double mul)
 
     for (i=0;i<320;i++)
         plasmax[i] =(63+fixtoi(
-                         16*fsin(itofix(i+2*pos))+
-                         16*fsin(itofix(mul*i+3*pos))+
-                         16*fsin(itofix(-i+9*pos))+
-                         16*fcos(itofix(-i+pos/7))));
+                         16*fixsin(itofix(i+2*pos))+
+                         16*fixsin(itofix(mul*i+3*pos))+
+                         16*fixsin(itofix(-i+9*pos))+
+                         16*fixcos(itofix(-i+pos/7))));
 
     for (i=0;i<256;i++)
         plasmay[i] = (63+fixtoi(
-                          16*fsin(itofix(2*pos-i))+
-                          16*fcos(itofix(mul*i+pos))+
-                          16*fsin(itofix(-i+pos/10))+
-                          16*fsin(itofix(+i+7*pos))));
+                          16*fixsin(itofix(2*pos-i))+
+                          16*fixcos(itofix(mul*i+pos))+
+                          16*fixsin(itofix(-i+pos/10))+
+                          16*fixsin(itofix(+i+7*pos))));
 
 
     for (j = lum->h-1;j >= 0;j--)
@@ -717,11 +717,11 @@ typedef struct TLightPosition
 
 void CalcLightPlace(struct TLightPosition * lp, int angle, int dist)
 {
-    lp->lx = SCALE_X*130+fixtoi(SCALE_X*dist*fcos(itofix(-angle)));
-    lp->ly = SCALE_Y*70 +fixtoi(SCALE_Y*dist*fsin(itofix(-angle)));
+    lp->lx = SCALE_X*130+fixtoi(SCALE_X*dist*fixcos(itofix(-angle)));
+    lp->ly = SCALE_Y*70 +fixtoi(SCALE_Y*dist*fixsin(itofix(-angle)));
 
-    lp->ox = fixtoi(SCALE_X*dist*fcos(itofix(-angle+128)));
-    lp->oy = fixtoi(SCALE_Y*dist*fsin(itofix(-angle+128)));
+    lp->ox = fixtoi(SCALE_X*dist*fixcos(itofix(-angle+128)));
+    lp->oy = fixtoi(SCALE_Y*dist*fixsin(itofix(-angle+128)));
 }
 
 // ###############################################################
@@ -783,8 +783,8 @@ void PartOmbre(void)
         if ((GetPosition()>=0x0200)&&(GetPosition()<=0x0300))
         {
             shadows = 1;
-            opacity = 225+fixtoi(25*fsin(itofix(VBLframe*6)));
-            radius  = 40+fixtoi(20*fsin(itofix(VBLframe*4)));
+            opacity = 225+fixtoi(25*fixsin(itofix(VBLframe*6)));
+            radius  = 40+fixtoi(20*fixsin(itofix(VBLframe*4)));
         }
         if ((GetPosition()==0x0300))
         {
@@ -1235,12 +1235,12 @@ void PartTunnel()
         dist = ro/5;
         // new position formula ...
 
-        xr=160 -30+fixtoi(1.3*dist*fcos(itofix(angle)));
-        yr=ylum-30+fixtoi(dist*fsin(itofix(angle)));
-        xb=160 -30+fixtoi(1.3*dist*fcos(itofix(angle+85)));
-        yb=ylum-30+fixtoi(dist*fsin(itofix(angle+85)));
-        xj=160 -30+fixtoi(1.3*dist*fcos(itofix(angle+170)));
-        yj=ylum-30+fixtoi(dist*fsin(itofix(angle+170)));
+        xr=160 -30+fixtoi(1.3*dist*fixcos(itofix(angle)));
+        yr=ylum-30+fixtoi(dist*fixsin(itofix(angle)));
+        xb=160 -30+fixtoi(1.3*dist*fixcos(itofix(angle+85)));
+        yb=ylum-30+fixtoi(dist*fixsin(itofix(angle+85)));
+        xj=160 -30+fixtoi(1.3*dist*fixcos(itofix(angle+170)));
+        yj=ylum-30+fixtoi(dist*fixsin(itofix(angle+170)));
 
 
         genererParticule(xr+25,yr+25,255,0,0);
@@ -1342,8 +1342,8 @@ void PartTunnel()
             ro+=VBLdelta;
         ro = MID(0,ro,50);
 
-        tx=80+fixtoi(1.6*(ro/2)*fsin(itofix(VBLframe)));
-        ty=50+fixtoi((ro/2)*fcos(itofix(VBLframe)));
+        tx=80+fixtoi(1.6*(ro/2)*fixsin(itofix(VBLframe)));
+        ty=50+fixtoi((ro/2)*fixcos(itofix(VBLframe)));
 
         // light of the tunnel
         blit(lum640,lum,160-tx,100-ty,0,0,640,400);
@@ -1355,7 +1355,7 @@ void PartTunnel()
                 blit(data[BRmxStyler].dat,lum,0,0,0,0,320,200);
 
         // da tunnel
-        DrawTunnel(buffer8, lookup1, tx, ty, VBLframe*5, fixtoi(255*fsin(itofix(VBLframe/2))), &deform);
+        DrawTunnel(buffer8, lookup1, tx, ty, VBLframe*5, fixtoi(255*fixsin(itofix(VBLframe/2))), &deform);
 
         if (GetPosition()>=0x0900)
         {
@@ -1367,7 +1367,7 @@ void PartTunnel()
                 O3DTrois.face[i].color = 50;
             size = 40+40*sin(VBLframe*2*3.14/256);
             set_projection_viewport(0-size/2,0-size/2,320+size,200+size);
-            K3DPlaceObject(&O3DTrois, 0, 0, itofix(400), 40*fsin(itofix(3*VBLframe)), itofix(255-ty/8), (235-VBLframe)<<16);
+            K3DPlaceObject(&O3DTrois, 0, 0, itofix(400), 40*fixsin(itofix(3*VBLframe)), itofix(255-ty/8), (235-VBLframe)<<16);
             drawing_mode(DRAW_MODE_SOLID,0,0,0);
             K3DRenderObject(lum, &O3DTrois);
 
@@ -1375,7 +1375,7 @@ void PartTunnel()
             for (i=0;i<O3DTrois.faces;i++)
                 O3DTrois.face[i].color = 180;
             set_projection_viewport(20,20,280,160);
-            K3DPlaceObject(&O3DTrois, 0, 0, itofix(400), 40*fsin(itofix(3*VBLframe)), itofix(255-ty/8), (235-VBLframe)<<16);
+            K3DPlaceObject(&O3DTrois, 0, 0, itofix(400), 40*fixsin(itofix(3*VBLframe)), itofix(255-ty/8), (235-VBLframe)<<16);
             drawing_mode(DRAW_MODE_SOLID,0,0,0);
             K3DRenderObject(lum, &O3DTrois);
 
@@ -1556,13 +1556,13 @@ void testRubber(void)
     {
         int c;
 
-        c = 127+fixtoi(127*fcos(itofix(j*2)));
+        c = 127+fixtoi(127*fixcos(itofix(j*2)));
 
         line(rubber,0,j,j,j, makecol16(255-c,0,0));
         line(rubber,j,j,63,j,makecol16(c,0,0));
-        x=0+3+fixtoi(3*fcos(itofix(j*4)));
+        x=0+3+fixtoi(3*fixcos(itofix(j*4)));
         line(rubber,-1 ,j,x-1,j,makecol16(0,0,200));
-        x=63-3+fixtoi(3*fcos(itofix(j*4+128)));
+        x=63-3+fixtoi(3*fixcos(itofix(j*4+128)));
         line(rubber,64,j,x+1,j,makecol16(0,0,200));
     }
 
@@ -1578,7 +1578,7 @@ void testRubber(void)
 
         for (y=0;y<200;y++)
         {
-            i = fixtoi(60*fcos(itofix(VBLframe+y/2)))+fixtoi(100*fsin(itofix(VBLframe/2+y/1)));
+            i = fixtoi(60*fixcos(itofix(VBLframe+y/2)))+fixtoi(100*fixsin(itofix(VBLframe/2+y/1)));
 
             blit(rubber,buffer,0,(i&63),0,y,64,1);
         }
@@ -1904,8 +1904,8 @@ void PartParticules()
 
         for (i=0;i<nb;i++)
         {
-            ps.rotated[i].x   += 15*fcos(itofix(VBLframe*4)+ps.rotated[i].y);
-            ps.rotated[i].z   += 10*fsin(itofix(VBLframe*5)+2*ps.rotated[i].y);
+            ps.rotated[i].x   += 15*fixcos(itofix(VBLframe*4)+ps.rotated[i].y);
+            ps.rotated[i].z   += 10*fixsin(itofix(VBLframe*5)+2*ps.rotated[i].y);
         }
 
         K3DParticuleProject(&ps);
@@ -2063,8 +2063,8 @@ void Draw3DWaves(BITMAP *lum, fixed dist, fixed rx, fixed ry, fixed rz)
 
             grille[x][y].x=itofix(x-gx/2)*20;
             grille[x][y].y=itofix(y-gy/2)*20;
-            grille[x][y].z=60*(fsin(itofix(x*16+3*VBLframe))+fcos(itofix(y*16+VBLframe))
-                               +fcos(itofix(y*20+2*VBLframe))+fcos(itofix(x*11+VBLframe/5)));
+            grille[x][y].z=60*(fixsin(itofix(x*16+3*VBLframe))+fixcos(itofix(y*16+VBLframe))
+                               +fixcos(itofix(y*20+2*VBLframe))+fixcos(itofix(x*11+VBLframe/5)));
         }
 
     get_transformation_matrix(&matrix, itofix(1), rx, ry, rz, 0, 0, dist);
@@ -2137,7 +2137,7 @@ void PartSalle(void)
         int x,y,i,z;
 
 
-        z = 161+fixtoi(160*fcos(itofix(VBLframe)/2));
+        z = 161+fixtoi(160*fixcos(itofix(VBLframe)/2));
 
         clear_to_color(small,128);
 //   clear_to_color(lum,128);
@@ -2276,7 +2276,7 @@ void Part3D(void)
 
         if (GetPosition() < 0x1D00)
         {
-            K3DPlaceObject(&O3DGisquet,0,itofix(0),itofix(200),40*fsin(itofix(VBLframe)),itofix(VBLframe)/2,itofix(0));
+            K3DPlaceObject(&O3DGisquet,0,itofix(0),itofix(200),40*fixsin(itofix(VBLframe)),itofix(VBLframe)/2,itofix(0));
             K3DRotateObject(&O3DGisquet);
 
             for (i=0;i<O3DGisquet.vertexes;i++)
@@ -2300,7 +2300,7 @@ void Part3D(void)
         }
         else
         {
-            K3DPlaceObject(&O3DAutre,0,itofix(0),itofix(200),40*fsin(itofix(VBLframe)),itofix(VBLframe)/2,itofix(VBLframe));
+            K3DPlaceObject(&O3DAutre,0,itofix(0),itofix(200),40*fixsin(itofix(VBLframe)),itofix(VBLframe)/2,itofix(VBLframe));
             K3DRotateObject(&O3DAutre);
             for (i=0;i<O3DAutre.vertexes;i++)
             {
@@ -2352,8 +2352,8 @@ void Part3D(void)
             Update(buffer);
 
             DrawSimpleTunnel(buffer8, lookup2,
-                             fixtoi(140*fsin(itofix(VBLframe)/4)),
-                             fixtoi(80*fcos(itofix(VBLframe)/3)),
+                             fixtoi(140*fixsin(itofix(VBLframe)/4)),
+                             fixtoi(80*fixcos(itofix(VBLframe)/3)),
                              VBLframe*0.8, VBLframe*0.5, data[Bmap8A].dat);
 
             mergeBitmap(buffer,buffer8,lum,tablePlasmaBump);
@@ -2430,8 +2430,8 @@ void PartScroll(void)
 
 
         pos-=1;
-        x = fixtoi(8*fcos(itofix(pos*2)));
-        y = fixtoi(8*fsin(itofix(pos*2.2)));
+        x = fixtoi(8*fixcos(itofix(pos*2)));
+        y = fixtoi(8*fixsin(itofix(pos*2.2)));
         blit(data[BBump].dat,dirty,0,0,0,0,640,480);
         draw_rle_sprite(dirty,data[BScrollOmbre].dat,(640-256)/2+x,pos+480+y);
         draw_rle_sprite(dirty,data[BScroll].dat,(640-256)/2,pos+480);
@@ -2696,8 +2696,8 @@ void PartGuru(void)
         fixed z;
         fixed a;
 
-        z = ftofix(0.75)+fcos(itofix(VBLframe/3))/4;
-        a = 255*fcos(itofix(VBLframe)/4);
+        z = ftofix(0.75)+fixcos(itofix(VBLframe/3))/4;
+        a = 255*fixcos(itofix(VBLframe)/4);
 
         Update(buffer);
 
@@ -2762,7 +2762,7 @@ void PartGuru(void)
 
             clear_to_color(small2,clearColor);
             K3DSetObjectRendering(&O3DSalle, FLAT, NONE, Z);
-            K3DPlaceObject(&O3DSalle, 0, itofix(50), itofix(150)+50*fsin(VBLframe<<14), itofix(40)+60*fcos(2*VBLframe<<14), 128<<16, VBLframe<<16);
+            K3DPlaceObject(&O3DSalle, 0, itofix(50), itofix(150)+50*fixsin(VBLframe<<14), itofix(40)+60*fixcos(2*VBLframe<<14), 128<<16, VBLframe<<16);
             K3DRotateObject(&O3DSalle);
             K3DProjectObject(&O3DSalle);
             K3DDrawObject(small2,&O3DSalle);
@@ -2772,7 +2772,7 @@ void PartGuru(void)
             {
                 clear_to_color(small1,clearColor);
                 K3DSetObjectRendering(&O3DCity, FLAT, NONE, Z);
-                K3DPlaceObject(&O3DCity, 0, itofix(100), itofix(200)+100*fsin(2*VBLframe<<16), itofix(40)+20*fcos(2*VBLframe<<14), 128<<16, 2*VBLframe<<16);
+                K3DPlaceObject(&O3DCity, 0, itofix(100), itofix(200)+100*fixsin(2*VBLframe<<16), itofix(40)+20*fixcos(2*VBLframe<<14), 128<<16, 2*VBLframe<<16);
                 K3DRotateObject(&O3DCity);
                 K3DProjectObject(&O3DCity);
                 K3DDrawObject(small1,&O3DCity);
@@ -2800,7 +2800,7 @@ void PartGuru(void)
         {
             set_projection_viewport(0,0,320,200);
             Draw3DWaves(lum, itofix(300),
-                        itofix(160)+30*fsin(itofix(VBLframe)/4),0,itofix(VBLframe)/2);
+                        itofix(160)+30*fixsin(itofix(VBLframe)/4),0,itofix(VBLframe)/2);
         }
 
         mergeBitmap(buffer,img,lum,tableGuru);
@@ -2812,11 +2812,11 @@ void PartGuru(void)
                 fixed z;
                 fixed a;
 
-                z = ftofix(0.75)+fcos(itofix(VBLframe/3))/4;
-                a = 255*fcos(itofix(VBLframe)/4);
+                z = ftofix(0.75)+fixcos(itofix(VBLframe/3))/4;
+                a = 255*fixcos(itofix(VBLframe)/4);
                 rotate_scaled_sprite(power,data[Bpower].dat,32-(32*fixtof(z)),32-(32*fixtof(z)),a,z);
-                z = ftofix(0.75)+fcos(itofix(VBLframe/2))/4;
-                a = 255*fcos(itofix(VBLframe+50)/4);
+                z = ftofix(0.75)+fixcos(itofix(VBLframe/2))/4;
+                a = 255*fixcos(itofix(VBLframe+50)/4);
                 rotate_scaled_sprite(temp,data[Bpower].dat,32-(32*fixtof(z)),32-(32*fixtof(z)),a,z);
             }
             set_trans_blender(0,0,0,mouse_y);
@@ -2906,8 +2906,8 @@ void PartPlasmaBump(void)
             draw_trans_rle_sprite(map,data[BStars].dat,((pos+256)&511)-255,0);
         }
         DrawSimpleTunnel(buffer8, lookup2,
-                         fixtoi(140*fsin(itofix(VBLframe)/4)),
-                         fixtoi(80*fcos(itofix(VBLframe)/3)),
+                         fixtoi(140*fixsin(itofix(VBLframe)/4)),
+                         fixtoi(80*fixcos(itofix(VBLframe)/3)),
                          VBLframe*0.8, VBLframe*0.5, map);
 
         if (GetPosition() >= 0x2000)
@@ -2935,7 +2935,7 @@ void PartPlasmaBump(void)
                 draw_trans_sprite(plasmaBump.lightMap,data[BHalo].dat,128+y-32,128+x-32);
             }
 
-            DrawBump(lum, 160+fixtoi(100*fsin(itofix(VBLframe))), 100, &plasmaBump);
+            DrawBump(lum, 160+fixtoi(100*fixsin(itofix(VBLframe))), 100, &plasmaBump);
             draw_trans_sprite(lum,data[BTransition].dat,0,0);
         }
 

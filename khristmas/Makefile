@@ -1,11 +1,11 @@
 
 CFLAGS=  -O3 -g `sdl-config --cflags` `libmikmod-config --cflags`
-LDFLAGS= -g `sdl-config --libs` -lSDL_image `libmikmod-config --libs`
+LDFLAGS= -g `sdl-config --libs` -lSDL_image `libmikmod-config --libs` -lz
 
 all: khristmas
     
 khristmas: khristmas.o
-	g++ $(LDFLAGS) -o khristmas khristmas.o
+	g++ -o khristmas khristmas.o $(LDFLAGS)
 
 khristmas.asm: khristmas.cpp
 	g++ -c -g -Wa,-a,-ad $(CFLAGS) khristmas.cpp > khristmas.asm

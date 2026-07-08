@@ -425,7 +425,7 @@ void PartParticles(void)
     {
         color_map = &tableGlenz1;
 
-        clear_to_color(lum, 127+fixtoi(127*fsin(VBLframe<<16)));
+        clear_to_color(lum, 127+fixtoi(127*fixsin(VBLframe<<16)));
 
 		position = GetPosition();
         if (position == 0x0900 ||
@@ -441,23 +441,23 @@ void PartParticles(void)
 
         color_map = &tableBalls;
 
-        DoDeformTable(&deform, fixtoi(63*fcos(itofix(VBLframe))));
+        DoDeformTable(&deform, fixtoi(63*fixcos(itofix(VBLframe))));
 
-        deform.param[0].phase = 7*VBLframe;//fixtoi(256*fcos(itofix(VBLframe)));
+        deform.param[0].phase = 7*VBLframe;//fixtoi(256*fixcos(itofix(VBLframe)));
         deform.param[1].phase =-3*VBLframe;
         deform.param[2].phase = VBLframe/5;
         deform.param[3].phase =-VBLframe;
 
         for (i = 0;i <= NumBlobs;i += IncBlob)
             draw_trans_sprite(lum, ball,
-                              fixtoi(itofix(SCREEN_W/2-8)+SCREEN_W/2*deform.table[i]*fcos(itofix(i))/256),
-                              fixtoi(itofix(SCREEN_H/2-8)+SCREEN_H/2*deform.table[i]*fsin(itofix(i))/256)
+                              fixtoi(itofix(SCREEN_W/2-8)+SCREEN_W/2*deform.table[i]*fixcos(itofix(i))/256),
+                              fixtoi(itofix(SCREEN_H/2-8)+SCREEN_H/2*deform.table[i]*fixsin(itofix(i))/256)
                              );
 
         for (i = 0;i <= NumBlobs;i += IncBlob)
             draw_trans_sprite(lum, ball,
-                              fixtoi(itofix(SCREEN_W/2-8)+SCREEN_W/4*deform.table[(-i)&255]*fcos(itofix(i))/256),
-                              fixtoi(itofix(SCREEN_H/2-8)+SCREEN_H/4*deform.table[(-i)&255]*fsin(itofix(i))/256)
+                              fixtoi(itofix(SCREEN_W/2-8)+SCREEN_W/4*deform.table[(-i)&255]*fixcos(itofix(i))/256),
+                              fixtoi(itofix(SCREEN_H/2-8)+SCREEN_H/4*deform.table[(-i)&255]*fixsin(itofix(i))/256)
                              );
 
         if (GetPosition() < 0x0900)
@@ -545,8 +545,8 @@ void PartGlenzCube(void)
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
 
         DeformBitmapScroll(buffer, image, deform,
-                           160+fixtoi(160*fcos(VBLframe<<16)), 100+fixtoi(100*fsin(VBLframe<<16)),
-                           160+fixtoi(160*fsin(VBLframe<<16)), 100+fixtoi(100*fcos(VBLframe<<16))
+                           160+fixtoi(160*fixcos(VBLframe<<16)), 100+fixtoi(100*fixsin(VBLframe<<16)),
+                           160+fixtoi(160*fixsin(VBLframe<<16)), 100+fixtoi(100*fixcos(VBLframe<<16))
                           );
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
@@ -558,7 +558,7 @@ void PartGlenzCube(void)
                        VBLframe<<14, VBLframe<<15, VBLframe<<14);
         K3DRenderObject(buffer, &glenz);
 
-        K3DPlaceObject(&glenz, itofix(0), itofix(0), itofix(225)+60*(fsin(itofix(3*VBLframe&255))),
+        K3DPlaceObject(&glenz, itofix(0), itofix(0), itofix(225)+60*(fixsin(itofix(3*VBLframe&255))),
                        VBLframe<<14, VBLframe<<15, VBLframe<<14);
         K3DRenderObject(buffer, &glenz);
 
@@ -728,13 +728,13 @@ void PartCredits()
         draw_rle_sprite(buffer, work, 0, 0);
         draw_rle_sprite(buffer, name, SCREEN_W/2-160, SCREEN_H/2-100);
 
-        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+0)<<16);
+        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fixsin(itofix(VBLframe)), 0, 0, (VBLframe+0)<<16);
         K3DRenderObject(buffer, &aim);
-        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+64)<<16);
+        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fixsin(itofix(VBLframe)), 0, 0, (VBLframe+64)<<16);
         K3DRenderObject(buffer, &aim);
-        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+128)<<16);
+        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fixsin(itofix(VBLframe)), 0, 0, (VBLframe+128)<<16);
         K3DRenderObject(buffer, &aim);
-        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fsin(itofix(VBLframe)), 0, 0, (VBLframe+192)<<16);
+        K3DPlaceObject(&aim, 0, 0, itofix(240)+20*fixsin(itofix(VBLframe)), 0, 0, (VBLframe+192)<<16);
         K3DRenderObject(buffer, &aim);
 
 
@@ -828,22 +828,22 @@ void PartTunnel(void)
         DrawTunnel(buffer, lookupDeep, 3*VBLframe, VBLframe, &deform);
 
         color_map = &tableGlenz3;
-        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fsin(itofix(VBLframe)), 0, 0, (VBLframe+0)<<16);
+        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fixsin(itofix(VBLframe)), 0, 0, (VBLframe+0)<<16);
         K3DRenderObject(buffer, &aim);
-        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fsin(itofix(VBLframe)), 0, 0, (VBLframe+64)<<16);
+        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fixsin(itofix(VBLframe)), 0, 0, (VBLframe+64)<<16);
         K3DRenderObject(buffer, &aim);
-        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fsin(itofix(VBLframe)), 0, 0, (VBLframe+128)<<16);
+        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fixsin(itofix(VBLframe)), 0, 0, (VBLframe+128)<<16);
         K3DRenderObject(buffer, &aim);
-        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fsin(itofix(VBLframe)), 0, 0, (VBLframe+192)<<16);
+        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fixsin(itofix(VBLframe)), 0, 0, (VBLframe+192)<<16);
         K3DRenderObject(buffer, &aim);
 
-        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fsin(itofix(2*VBLframe+128)), 0, 0, (VBLframe+32)<<16);
+        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fixsin(itofix(2*VBLframe+128)), 0, 0, (VBLframe+32)<<16);
         K3DRenderObject(buffer, &aim);
-        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fsin(itofix(2*VBLframe+128)), 0, 0, (VBLframe+64+32)<<16);
+        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fixsin(itofix(2*VBLframe+128)), 0, 0, (VBLframe+64+32)<<16);
         K3DRenderObject(buffer, &aim);
-        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fsin(itofix(2*VBLframe+128)), 0, 0, (VBLframe+128+32)<<16);
+        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fixsin(itofix(2*VBLframe+128)), 0, 0, (VBLframe+128+32)<<16);
         K3DRenderObject(buffer, &aim);
-        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fsin(itofix(2*VBLframe+128)), 0, 0, (VBLframe+192+32)<<16);
+        K3DPlaceObject(&aim, itofix(0), itofix(0), itofix(200)+50*fixsin(itofix(2*VBLframe+128)), 0, 0, (VBLframe+192+32)<<16);
         K3DRenderObject(buffer, &aim);
 
         DrawCounter();
@@ -911,7 +911,7 @@ void PartVertexPlasma(void)
         deform.param[3].phase = 4*VBLframe;
         DrawTunnel(buffer, lookupFlat2, VBLframe, VBLframe, &deform);
 
-        K3DPlaceObject(&patate, 80*fcos(itofix(VBLframe/2)), itofix(0), itofix(250), (VBLframe)<<14, (VBLframe)<<15, (VBLframe)<<14);
+        K3DPlaceObject(&patate, 80*fixcos(itofix(VBLframe/2)), itofix(0), itofix(250), (VBLframe)<<14, (VBLframe)<<15, (VBLframe)<<14);
         K3DRotateObject(&patate);
 
         DoDeformTable(&plasma, VBLframe);
@@ -969,7 +969,7 @@ void PartVertexPlasma(void)
         deform.param[3].phase = 4*VBLframe;
         DrawTunnel(buffer, lookupFlat, VBLframe, VBLframe, &deform);
 
-        K3DPlaceObject(&cube, 80*fcos(itofix(VBLframe/2)), itofix(0), itofix(150), (VBLframe)<<14, (VBLframe)<<15, (VBLframe)<<14);
+        K3DPlaceObject(&cube, 80*fixcos(itofix(VBLframe/2)), itofix(0), itofix(150), (VBLframe)<<14, (VBLframe)<<15, (VBLframe)<<14);
         K3DRotateObject(&cube);
 
         K3DProjectObject(&cube);
@@ -1023,15 +1023,15 @@ void PartPulseCube(void)
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz1;
 
-        DeformBitmapScroll(buffer, img, deform, 150+fixtoi(150*fsin(itofix(VBLframe)))
-                           , 90+fixtoi(90*fcos(itofix(3*VBLframe)))
-                           , 150+fixtoi(150*fcos(itofix(3*VBLframe)))
-                           , 90+fixtoi(90*fsin(itofix(2*VBLframe))));
+        DeformBitmapScroll(buffer, img, deform, 150+fixtoi(150*fixsin(itofix(VBLframe)))
+                           , 90+fixtoi(90*fixcos(itofix(3*VBLframe)))
+                           , 150+fixtoi(150*fixcos(itofix(3*VBLframe)))
+                           , 90+fixtoi(90*fixsin(itofix(2*VBLframe))));
 
         if (GetPosition() >= 0x1200)
         {
-            set_projection_viewport(fixtoi(50*fcos(itofix(2*VBLframe))),
-                                    fixtoi(50*fcos(itofix(1*VBLframe))), SCREEN_W, SCREEN_H);
+            set_projection_viewport(fixtoi(50*fixcos(itofix(2*VBLframe))),
+                                    fixtoi(50*fixcos(itofix(1*VBLframe))), SCREEN_W, SCREEN_H);
 
             K3DSetObjectRendering(&cube, TEXTURE, QSORT, Z);
             K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(300),
@@ -1045,7 +1045,7 @@ void PartPulseCube(void)
                            VBLframe<<16, VBLframe<<15, VBLframe<<14);
             K3DRenderObject(buffer, &cube);
 
-            K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(225)+60*(fsin(itofix(5*VBLframe))),
+            K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(225)+60*(fixsin(itofix(5*VBLframe))),
                            VBLframe<<16, VBLframe<<15, VBLframe<<14);
             K3DRenderObject(buffer, &cube);
         }
@@ -1062,10 +1062,10 @@ void PartPulseCube(void)
     {
         color_map = &tableGlenz1;
 
-        DeformBitmapScroll(buffer, img, deform, 150+fixtoi(150*fsin(itofix(VBLframe)))
-                           , 90+fixtoi(90*fcos(itofix(3*VBLframe)))
-                           , 150+fixtoi(150*fcos(itofix(3*VBLframe)))
-                           , 90+fixtoi(90*fsin(itofix(2*VBLframe))));
+        DeformBitmapScroll(buffer, img, deform, 150+fixtoi(150*fixsin(itofix(VBLframe)))
+                           , 90+fixtoi(90*fixcos(itofix(3*VBLframe)))
+                           , 150+fixtoi(150*fixcos(itofix(3*VBLframe)))
+                           , 90+fixtoi(90*fixsin(itofix(2*VBLframe))));
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
 
@@ -1084,7 +1084,7 @@ void PartPulseCube(void)
                        VBLframe<<16, VBLframe<<15, VBLframe<<16);
         K3DRenderObject(buffer, &cube);
 
-        K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(225)+60*(fsin(itofix(5*VBLframe))),
+        K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(225)+60*(fixsin(itofix(5*VBLframe))),
                        VBLframe<<16, VBLframe<<15, VBLframe<<16);
         K3DRenderObject(buffer, &cube);
 
@@ -1103,7 +1103,7 @@ void PartPulseCube(void)
                        VBLframe<<16, VBLframe<<16, VBLframe<<14);
         K3DRenderObject(buffer, &cube);
 
-        K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(225)+60*(fsin(itofix(5*VBLframe))),
+        K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(225)+60*(fixsin(itofix(5*VBLframe))),
                        VBLframe<<16, VBLframe<<16, VBLframe<<14);
         K3DRenderObject(buffer, &cube);
 
@@ -1122,7 +1122,7 @@ void PartPulseCube(void)
                        VBLframe<<15, VBLframe<<15, VBLframe<<16);
         K3DRenderObject(buffer, &cube);
 
-        K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(225)+60*(fsin(itofix(5*VBLframe))),
+        K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(225)+60*(fixsin(itofix(5*VBLframe))),
                        VBLframe<<15, VBLframe<<15, VBLframe<<16);
         K3DRenderObject(buffer, &cube);
 
@@ -1141,12 +1141,12 @@ void PartPulseCube(void)
                        VBLframe<<14, VBLframe<<16, VBLframe<<14);
         K3DRenderObject(buffer, &cube);
 
-        K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(225)+60*(fsin(itofix(5*VBLframe))),
+        K3DPlaceObject(&cube, itofix(0), itofix(0), itofix(225)+60*(fixsin(itofix(5*VBLframe))),
                        VBLframe<<14, VBLframe<<16, VBLframe<<14);
         K3DRenderObject(buffer, &cube);
 
         set_projection_viewport(0, 0, SCREEN_W, SCREEN_H);
-        K3DPlaceObject(&patate, itofix(0), itofix(0), itofix(300)+60*(fsin(itofix(5*VBLframe))),
+        K3DPlaceObject(&patate, itofix(0), itofix(0), itofix(300)+60*(fixsin(itofix(5*VBLframe))),
                        VBLframe<<15, VBLframe<<16, (-VBLframe)<<14);
 
         color_map = &light2;
@@ -1155,8 +1155,8 @@ void PartPulseCube(void)
         K3DBackFaceObject(&patate);
         for (i = 0;i < patate.vertexes;i++)
         {
-            patate.projected[i].color = 110+fixtoi(40*fsin(itofix(9*VBLframe)))+
-                                        fixtoi(40*fcos(itofix(4*(VBLframe+i))));
+            patate.projected[i].color = 110+fixtoi(40*fixsin(itofix(9*VBLframe)))+
+                                        fixtoi(40*fixcos(itofix(4*(VBLframe+i))));
         }
         K3DDrawObject(buffer, &patate);
 
@@ -1188,16 +1188,16 @@ void PartCity(void)
     {
         color_map = &tableGlenz1;
         stretch_blit(data[Bdeform].dat, buffer,
-                     SCREEN_W/2+fixtoi(150*fcos(itofix(VBLframe))),
-                     SCREEN_H/2+fixtoi(90*fsin(itofix(2*VBLframe))),
-                     SCREEN_W/2+fixtoi(80*fsin(itofix(3*VBLframe))),
-                     SCREEN_H/2+fixtoi(50*fcos(itofix(4*VBLframe))),
+                     SCREEN_W/2+fixtoi(150*fixcos(itofix(VBLframe))),
+                     SCREEN_H/2+fixtoi(90*fixsin(itofix(2*VBLframe))),
+                     SCREEN_W/2+fixtoi(80*fixsin(itofix(3*VBLframe))),
+                     SCREEN_H/2+fixtoi(50*fixcos(itofix(4*VBLframe))),
                      0, 0, SCREEN_W, SCREEN_H);
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz3;
 
-        K3DPlaceObject(&city, 0, itofix(100), itofix(200)+100*fsin(VBLframe<<16), itofix(40)+20*fcos(VBLframe<<14), 128<<16, VBLframe<<16);
+        K3DPlaceObject(&city, 0, itofix(100), itofix(200)+100*fixsin(VBLframe<<16), itofix(40)+20*fixcos(VBLframe<<14), 128<<16, VBLframe<<16);
         K3DRenderObject(buffer, &city);
 
         color_map = &tableGlenz1;
@@ -1251,17 +1251,17 @@ void PartEye(void)
     {
         color_map = &tableGlenz1;
         stretch_blit(data[Bdeform].dat, buffer,
-                     SCREEN_W/2+fixtoi(150*fcos(itofix(VBLframe))),
-                     SCREEN_H/2+fixtoi(90*fsin(itofix(2*VBLframe))),
-                     SCREEN_W/2+fixtoi(80*fsin(itofix(3*VBLframe))),
-                     SCREEN_H/2+fixtoi(50*fcos(itofix(4*VBLframe))),
+                     SCREEN_W/2+fixtoi(150*fixcos(itofix(VBLframe))),
+                     SCREEN_H/2+fixtoi(90*fixsin(itofix(2*VBLframe))),
+                     SCREEN_W/2+fixtoi(80*fixsin(itofix(3*VBLframe))),
+                     SCREEN_H/2+fixtoi(50*fixcos(itofix(4*VBLframe))),
                      0, 0, SCREEN_W, SCREEN_H);
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz3;
 
-        K3DPlaceObject(&bizar, 0, itofix(100), itofix(200)+100*fsin(VBLframe<<15), 50*fsin(VBLframe<<15), VBLframe<<16, 0<<16);
-        K3DPlaceObject(&bizar2, 0, itofix(100), itofix(200)+100*fsin(VBLframe<<15), 50*fsin(VBLframe<<15), VBLframe<<16, 0<<16);
+        K3DPlaceObject(&bizar, 0, itofix(100), itofix(200)+100*fixsin(VBLframe<<15), 50*fixsin(VBLframe<<15), VBLframe<<16, 0<<16);
+        K3DPlaceObject(&bizar2, 0, itofix(100), itofix(200)+100*fixsin(VBLframe<<15), 50*fixsin(VBLframe<<15), VBLframe<<16, 0<<16);
         if (GetPosition()&4)
             K3DRenderObject(buffer, &bizar);
         else
@@ -1287,16 +1287,16 @@ void PartEye(void)
         color_map = &tableGlenz1;
 
         stretch_blit(data[Bdeform].dat, buffer,
-                     SCREEN_W/2+fixtoi(150*fcos(itofix(VBLframe))),
-                     SCREEN_H/2+fixtoi(90*fsin(itofix(2*VBLframe))),
-                     SCREEN_W/2+fixtoi(80*fsin(itofix(3*VBLframe))),
-                     SCREEN_H/2+fixtoi(50*fcos(itofix(4*VBLframe))),
+                     SCREEN_W/2+fixtoi(150*fixcos(itofix(VBLframe))),
+                     SCREEN_H/2+fixtoi(90*fixsin(itofix(2*VBLframe))),
+                     SCREEN_W/2+fixtoi(80*fixsin(itofix(3*VBLframe))),
+                     SCREEN_H/2+fixtoi(50*fixcos(itofix(4*VBLframe))),
                      0, 0, SCREEN_W, SCREEN_H);
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz3;
 
-        K3DPlaceObject(&bizar2, 0, itofix(100), itofix(200)+100*fsin(VBLframe<<15), 50*fsin(VBLframe<<15), VBLframe<<16, 0<<16);
+        K3DPlaceObject(&bizar2, 0, itofix(100), itofix(200)+100*fixsin(VBLframe<<15), 50*fixsin(VBLframe<<15), VBLframe<<16, 0<<16);
         K3DRenderObject(buffer, &bizar2);
 
         color_map = &tableGlenz1;
@@ -1377,16 +1377,16 @@ void PartFinal(void)
         color_map = &tableGlenz1;
 
         stretch_blit(data[Bdeform].dat, buffer,
-                     SCREEN_W/2+fixtoi(150*fcos(itofix(VBLframe))),
-                     SCREEN_H/2+fixtoi(90*fsin(itofix(2*VBLframe))),
-                     SCREEN_W/2+fixtoi(80*fsin(itofix(3*VBLframe))),
-                     SCREEN_H/2+fixtoi(50*fcos(itofix(4*VBLframe))),
+                     SCREEN_W/2+fixtoi(150*fixcos(itofix(VBLframe))),
+                     SCREEN_H/2+fixtoi(90*fixsin(itofix(2*VBLframe))),
+                     SCREEN_W/2+fixtoi(80*fixsin(itofix(3*VBLframe))),
+                     SCREEN_H/2+fixtoi(50*fixcos(itofix(4*VBLframe))),
                      0, 0, SCREEN_W, SCREEN_H);
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz3;
 
-        K3DPlaceObject(&bizar, 0, itofix(100), itofix(200)+100*fsin(VBLframe<<15), 50*fsin(VBLframe<<15), VBLframe<<16, 30*fsin(VBLframe<<16));
+        K3DPlaceObject(&bizar, 0, itofix(100), itofix(200)+100*fixsin(VBLframe<<15), 50*fixsin(VBLframe<<15), VBLframe<<16, 30*fixsin(VBLframe<<16));
         K3DRenderObject(buffer, &bizar);
 
         if (key[KEY_ESC])
@@ -1400,21 +1400,21 @@ void PartFinal(void)
     {
         color_map = &tableGlenz1;
         stretch_blit(data[Bdeform].dat, buffer,
-                     SCREEN_W/2+fixtoi(150*fcos(itofix(VBLframe))),
-                     SCREEN_H/2+fixtoi(90*fsin(itofix(2*VBLframe))),
-                     SCREEN_W/2+fixtoi(80*fsin(itofix(3*VBLframe))),
-                     SCREEN_H/2+fixtoi(50*fcos(itofix(4*VBLframe))),
+                     SCREEN_W/2+fixtoi(150*fixcos(itofix(VBLframe))),
+                     SCREEN_H/2+fixtoi(90*fixsin(itofix(2*VBLframe))),
+                     SCREEN_W/2+fixtoi(80*fixsin(itofix(3*VBLframe))),
+                     SCREEN_H/2+fixtoi(50*fixcos(itofix(4*VBLframe))),
                      0, 0, SCREEN_W, SCREEN_H);
 
         drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
         color_map = &tableGlenz3;
 
-        K3DPlaceObject(&bizar2, 160*fsin(VBLframe<<15), itofix(100), itofix(200)+100*fsin(VBLframe<<14), 50*fsin(VBLframe<<16), VBLframe<<15, 30*fsin(VBLframe<<16));
+        K3DPlaceObject(&bizar2, 160*fixsin(VBLframe<<15), itofix(100), itofix(200)+100*fixsin(VBLframe<<14), 50*fixsin(VBLframe<<16), VBLframe<<15, 30*fixsin(VBLframe<<16));
         K3DRenderObject(buffer, &bizar2);
 
         if (GetPosition() <= 0x1e00)
         {
-            K3DPlaceObject(&bizar, 100*fcos(VBLframe<<14), itofix(100), itofix(300)+200*fsin(VBLframe<<16), 50*fsin(VBLframe<<15), VBLframe<<14, 40*fsin(VBLframe<<15));
+            K3DPlaceObject(&bizar, 100*fixcos(VBLframe<<14), itofix(100), itofix(300)+200*fixsin(VBLframe<<16), 50*fixsin(VBLframe<<15), VBLframe<<14, 40*fixsin(VBLframe<<15));
             K3DRenderObject(buffer, &bizar);
         }
 

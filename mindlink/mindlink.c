@@ -822,7 +822,7 @@ void Load(void)
 
             if ((y-SCREEN_H/2) != 0)
                 TunnelLookup[SCREEN_W*y+x] = (
-                                                 fixtoi(fatan(fdiv(itofix(x-SCREEN_W/2), itofix(y-SCREEN_H/2)))))<<9;
+                                                 fixtoi(fixatan(fdiv(itofix(x-SCREEN_W/2), itofix(y-SCREEN_H/2)))))<<9;
             else
                 TunnelLookup[SCREEN_W*y+x] = (128)<<8;
 
@@ -910,13 +910,13 @@ void DoDeformTable(TDeformTable* deform, int position)
     for (i = 255;i >= 0;i--)
     {
         c = (
-                fsin(itofix(((((i+position)*deform->param[0].freq)>>16)+
+                fixsin(itofix(((((i+position)*deform->param[0].freq)>>16)+
                              deform->param[0].phase)&255))+
-                fsin(itofix(((((i+position)*deform->param[1].freq)>>16)+
+                fixsin(itofix(((((i+position)*deform->param[1].freq)>>16)+
                              deform->param[1].phase)&255))+
-                fsin(itofix(((((i+position)*deform->param[2].freq)>>16)+
+                fixsin(itofix(((((i+position)*deform->param[2].freq)>>16)+
                              deform->param[2].phase)&255))+
-                fsin(itofix(((((i+position)*deform->param[3].freq)>>16)+
+                fixsin(itofix(((((i+position)*deform->param[3].freq)>>16)+
                              deform->param[3].phase)&255)));
 
         // clipping
@@ -1103,7 +1103,7 @@ void PartInternalBlob(void)
     while (GetPosition() < 0x0300)
     {
         K3DPlaceObject(&obj, 0, itofix(-50),
-                       itofix(50)+70*fsin(itofix((1*VBLframe)&255)),
+                       itofix(50)+70*fixsin(itofix((1*VBLframe)&255)),
                        (VBLframe<<14)&0xffffff,
                        (VBLframe<<14)&0xffffff,
                        (VBLframe<<14)&0xffffff);
@@ -1111,8 +1111,8 @@ void PartInternalBlob(void)
         K3DRotateObject(&obj);
         for (i = 0;i < obj.vertexes;i++)
         {
-            obj.rotated[i].x += 20*fsin(itofix((2*i+3*VBLframe)&255));
-            obj.rotated[i].y += 20*fsin(itofix((5*i+2*VBLframe)&255));
+            obj.rotated[i].x += 20*fixsin(itofix((2*i+3*VBLframe)&255));
+            obj.rotated[i].y += 20*fixsin(itofix((5*i+2*VBLframe)&255));
         }
         K3DProjectObject(&obj);
         K3DDrawObject(buffer, &obj);
@@ -1179,7 +1179,7 @@ void Part2Blob(void)
     {
         /* internal blob */
         K3DPlaceObject(&obj, 0, 0,
-                       itofix(40)+50*fsin(itofix((4*VBLframe)&255)),
+                       itofix(40)+50*fixsin(itofix((4*VBLframe)&255)),
                        (VBLframe<<14)&0xffffff,
                        (VBLframe<<14)&0xffffff,
                        (VBLframe<<14)&0xffffff);
@@ -1187,10 +1187,10 @@ void Part2Blob(void)
         K3DRotateObject(&obj);
         for (i = 0;i < obj.vertexes;i++)
         {
-            obj.rotated[i].x += 24*fsin(itofix((7*i+8*VBLframe)&255))+
-                                14*fsin(itofix((6*i+2*VBLframe)&255));
-            obj.rotated[i].y += 10*fsin(itofix((1*i+2*VBLframe)&255))+
-                                44*fsin(itofix((2*i+5*VBLframe)&255));
+            obj.rotated[i].x += 24*fixsin(itofix((7*i+8*VBLframe)&255))+
+                                14*fixsin(itofix((6*i+2*VBLframe)&255));
+            obj.rotated[i].y += 10*fixsin(itofix((1*i+2*VBLframe)&255))+
+                                44*fixsin(itofix((2*i+5*VBLframe)&255));
         }
         K3DProjectObject(&obj);
         //    K3DEnvMapObject(&obj);
@@ -1199,7 +1199,7 @@ void Part2Blob(void)
 
         /* little blob */
         K3DPlaceObject(&obj, 0, 0,
-                       itofix(500)+50*fcos(itofix((4*VBLframe)&255)),
+                       itofix(500)+50*fixcos(itofix((4*VBLframe)&255)),
                        (VBLframe<<14)&0xffffff,
                        (VBLframe<<14)&0xffffff,
                        (VBLframe<<14)&0xffffff);
@@ -1207,12 +1207,12 @@ void Part2Blob(void)
         K3DRotateObject(&obj);
         for (i = 0;i < obj.vertexes;i++)
         {
-            //      obj.rotated[i].x += 14*fsin(itofix((1*i+1*VBLframe)&255))+
-            //                          24*fsin(itofix((2*i+1*VBLframe)&255));
-            //      obj.rotated[i].y += 20*fsin(itofix((3*i+3*VBLframe)&255))+
-            //                          14*fsin(itofix((7*i+2*VBLframe)&255));
-            obj.rotated[i].z += 50*fsin(itofix((3*i+5*VBLframe)&255))+
-                                34*fsin(itofix((7*i+8*VBLframe)&255));
+            //      obj.rotated[i].x += 14*fixsin(itofix((1*i+1*VBLframe)&255))+
+            //                          24*fixsin(itofix((2*i+1*VBLframe)&255));
+            //      obj.rotated[i].y += 20*fixsin(itofix((3*i+3*VBLframe)&255))+
+            //                          14*fixsin(itofix((7*i+2*VBLframe)&255));
+            obj.rotated[i].z += 50*fixsin(itofix((3*i+5*VBLframe)&255))+
+                                34*fixsin(itofix((7*i+8*VBLframe)&255));
         }
 
         K3DProjectObject(&obj);
@@ -1340,9 +1340,9 @@ void PartWater(void)
             x+=SCALE_X;
 
         // put the picture
-        //      blit(tortue,buffer,x,(fsin((itofix((4*VBLframe)&255)))/2340)+27,0,0,172,256);
+        //      blit(tortue,buffer,x,(fixsin((itofix((4*VBLframe)&255)))/2340)+27,0,0,172,256);
         blit(_buffer, buffer, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
-        draw_trans_sprite(buffer, tortue2, x, (fsin((itofix((10*VBLframe)&255)))/2340)-27);
+        draw_trans_sprite(buffer, tortue2, x, (fixsin((itofix((10*VBLframe)&255)))/2340)-27);
 
         Update();
 
@@ -1414,7 +1414,7 @@ void PartMetaballs(void)
     while (GetPosition() < 0x0c00)
     {
         K3DPlaceObject(&obj, 0, 0,
-                       itofix(120)+30*fsin(itofix((1*VBLframe)&255)),
+                       itofix(120)+30*fixsin(itofix((1*VBLframe)&255)),
                        itofix(64), 0, ((256-VBLframe)<<17)&0xffffff);
         //                   (VBLframe<<16)&0xffffff,
         //                   (VBLframe<<16)&0xffffff);
@@ -1432,16 +1432,16 @@ void PartMetaballs(void)
         c = 8;
         for (i = 0;i < c;i++)
             draw_trans_sprite(buffer, blob,
-                              SCALE_X*160-SCALE_X*32+fixtoi(SCALE_X*60*fsin(itofix((VBLframe+i*256/c)&255)))+fixtoi(SCALE_X*80*fcos(itofix((VBLframe*2+i*256/c)&255)))
-                              , SCALE_Y*100-SCALE_Y*32+fixtoi(SCALE_Y*70*fcos(itofix((VBLframe*3+i*256/c)&255)))+fixtoi(SCALE_Y*40*fsin(itofix((VBLframe+i*256*c)&255))));
+                              SCALE_X*160-SCALE_X*32+fixtoi(SCALE_X*60*fixsin(itofix((VBLframe+i*256/c)&255)))+fixtoi(SCALE_X*80*fixcos(itofix((VBLframe*2+i*256/c)&255)))
+                              , SCALE_Y*100-SCALE_Y*32+fixtoi(SCALE_Y*70*fixcos(itofix((VBLframe*3+i*256/c)&255)))+fixtoi(SCALE_Y*40*fixsin(itofix((VBLframe+i*256*c)&255))));
 
         K3DDrawObject(buffer, &obj);
 
         c = 6;
         for (i = 0;i < c;i++)
             draw_trans_sprite(buffer, blob,
-                              SCALE_X*160-SCALE_X*32+fixtoi(SCALE_X*60*fsin(itofix((VBLframe+i*256/c)&255)))+fixtoi(SCALE_X*80*fcos(itofix((VBLframe+i*256/c)&255)))
-                              , SCALE_Y*100-SCALE_Y*32+fixtoi(SCALE_Y*80*fcos(itofix((VBLframe+i*256/c)&255)))+fixtoi(SCALE_Y*30*fsin(itofix((VBLframe*2+i*256*c)&255))));
+                              SCALE_X*160-SCALE_X*32+fixtoi(SCALE_X*60*fixsin(itofix((VBLframe+i*256/c)&255)))+fixtoi(SCALE_X*80*fixcos(itofix((VBLframe+i*256/c)&255)))
+                              , SCALE_Y*100-SCALE_Y*32+fixtoi(SCALE_Y*80*fixcos(itofix((VBLframe+i*256/c)&255)))+fixtoi(SCALE_Y*30*fixsin(itofix((VBLframe*2+i*256*c)&255))));
 
 
         draw_trans_rle_sprite(buffer,text[4],0,SCREEN_H-28*SCALE_Y);
@@ -1739,10 +1739,10 @@ void PartEnd(void)
         Update();
         blit(back,buffer,0,0,0,0,SCREEN_W,SCREEN_H);
 
-        K3DPlaceObject(&obj,itofix(250)+100*fsin(itofix(VBLframe&255)),itofix((VBLframe&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
+        K3DPlaceObject(&obj,itofix(250)+100*fixsin(itofix(VBLframe&255)),itofix((VBLframe&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
         K3DRenderObject(buffer, &obj);
 
-        K3DPlaceObject(&obj,itofix(250)+100*fcos(itofix(VBLframe&255)),itofix(((VBLframe+512)&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
+        K3DPlaceObject(&obj,itofix(250)+100*fixcos(itofix(VBLframe&255)),itofix(((VBLframe+512)&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
         K3DRenderObject(buffer, &obj);
 
         draw_trans_rle_sprite(buffer,data[BMP_scroll].dat,SCREEN_W/2,pos);
@@ -1758,10 +1758,10 @@ void PartEnd(void)
         set_palette(pal);
         blit(end,buffer,0,0,0,0,SCREEN_W,SCREEN_H);
 
-        K3DPlaceObject(&obj,itofix(250)+100*fsin(itofix(VBLframe&255)),itofix(((VBLframe)&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
+        K3DPlaceObject(&obj,itofix(250)+100*fixsin(itofix(VBLframe&255)),itofix(((VBLframe)&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
         K3DRenderObject(buffer, &obj);
 
-        K3DPlaceObject(&obj,itofix(250)+100*fcos(itofix(VBLframe&255)),itofix(((VBLframe+512)&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
+        K3DPlaceObject(&obj,itofix(250)+100*fixcos(itofix(VBLframe&255)),itofix(((VBLframe+512)&1023)-512),itofix(300),itofix(VBLframe),itofix(0),itofix(VBLframe));
         K3DRenderObject(buffer, &obj);
 
         if (key[KEY_ESC])

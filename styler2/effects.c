@@ -39,7 +39,7 @@ void CalcTunnelLookup(unsigned short* lookup, int orientation, int deep)
         {
             fixed n,m;
             if ((y-200) != 0)
-                lookup[640*y+x] = (fixtoi(fatan(fdiv(itofix(x-320), itofix(y-200)))))<<9;
+                lookup[640*y+x] = (fixtoi(fixatan(fdiv(itofix(x-320), itofix(y-200)))))<<9;
             else
                 lookup[640*y+x] = (128)<<8;
             n = itofix(x-320);
@@ -223,10 +223,10 @@ void DoDeformTable(TDeformTable* deform, int position)
     for (i = 255;i >= 0;i--)
     {
         c = (
-                fsin(((i+position)*deform->param[0].freq)+(deform->param[0].phase<<16))+
-                fsin(((i+position)*deform->param[1].freq)+(deform->param[1].phase<<16))+
-                fsin(((i+position)*deform->param[2].freq)+(deform->param[2].phase<<16))+
-                fsin(((i+position)*deform->param[3].freq)+(deform->param[3].phase<<16)));
+                fixsin(((i+position)*deform->param[0].freq)+(deform->param[0].phase<<16))+
+                fixsin(((i+position)*deform->param[1].freq)+(deform->param[1].phase<<16))+
+                fixsin(((i+position)*deform->param[2].freq)+(deform->param[2].phase<<16))+
+                fixsin(((i+position)*deform->param[3].freq)+(deform->param[3].phase<<16)));
 
         // clipping
         deform->table[i] = ((128+(fixtoi(c*128)))*deform->intensity)/256;
@@ -418,39 +418,39 @@ void drawRotatedBack(BITMAP * buffer, BITMAP * back, fixed angle, int dist)
 
     points[0].x = itofix(0);
     points[0].y = itofix(0);
-    points[0].x = (s*fcos(angle))+itofix(160);
-    points[0].y = (s*fsin(angle))+itofix(100);
+    points[0].x = (s*fixcos(angle))+itofix(160);
+    points[0].y = (s*fixsin(angle))+itofix(100);
     points[0].z = z;
     points[0].u = 0;
     points[0].v = 0;
-    points[0].c = (itofix(127)+127*fsin(1*angle))>>16;;;
+    points[0].c = (itofix(127)+127*fixsin(1*angle))>>16;;;
 
     points[1].x = itofix(320);
     points[1].y = itofix(0);
-    points[1].x = (s*fcos(angle+itofix(64)))+itofix(128);
-    points[1].y = (s*fsin(angle+itofix(64)))+itofix(64);
+    points[1].x = (s*fixcos(angle+itofix(64)))+itofix(128);
+    points[1].y = (s*fixsin(angle+itofix(64)))+itofix(64);
     points[1].z = z;
     points[1].u = size<<16;
     points[1].v = 0;
-    points[1].c = (itofix(192)+63*fsin(2*angle))>>16;
+    points[1].c = (itofix(192)+63*fixsin(2*angle))>>16;
 
     points[2].x = itofix(320);
     points[2].y = itofix(200);
-    points[2].x = (s*fcos(angle+itofix(128)))+itofix(128);
-    points[2].y = (s*fsin(angle+itofix(128)))+itofix(64);
+    points[2].x = (s*fixcos(angle+itofix(128)))+itofix(128);
+    points[2].y = (s*fixsin(angle+itofix(128)))+itofix(64);
     points[2].z = z;
     points[2].u = size<<16;
     points[2].v = size<<16;
-    points[2].c = (itofix(127)+127*fsin(3*angle))>>16;;;
+    points[2].c = (itofix(127)+127*fixsin(3*angle))>>16;;;
 
     points[3].x = itofix(0);
     points[3].y = itofix(200);
-    points[3].x = (s*fcos(angle+itofix(192)))+itofix(128);
-    points[3].y = (s*fsin(angle+itofix(192)))+itofix(64);
+    points[3].x = (s*fixcos(angle+itofix(192)))+itofix(128);
+    points[3].y = (s*fixsin(angle+itofix(192)))+itofix(64);
     points[3].z = z;
     points[3].u = 0;
     points[3].v = size<<16;
-    points[3].c = (itofix(192)+63*fsin(angle/3))>>16;
+    points[3].c = (itofix(192)+63*fixsin(angle/3))>>16;
 
     quad3d(buffer, POLYTYPE_ATEX, back, &points[0], &points[1], &points[2], &points[3]);
 }
@@ -466,39 +466,39 @@ void drawRotatedBack2(BITMAP * buffer, BITMAP * back, fixed angle, int dist, int
 
     points[0].x = itofix(0);
     points[0].y = itofix(0);
-    points[0].x = (s*fcos(angle))+itofix(128);
-    points[0].y = (s*fsin(angle))+itofix(64);
+    points[0].x = (s*fixcos(angle))+itofix(128);
+    points[0].y = (s*fixsin(angle))+itofix(64);
     points[0].z = z;
     points[0].u = 0;
     points[0].v = 0;
-    points[0].c = (itofix(127)+127*fsin(1*frame))>>16;;;
+    points[0].c = (itofix(127)+127*fixsin(1*frame))>>16;;;
 
     points[1].x = itofix(320);
     points[1].y = itofix(0);
-    points[1].x = (s*fcos(angle+itofix(64)))+itofix(128);
-    points[1].y = (s*fsin(angle+itofix(64)))+itofix(64);
+    points[1].x = (s*fixcos(angle+itofix(64)))+itofix(128);
+    points[1].y = (s*fixsin(angle+itofix(64)))+itofix(64);
     points[1].z = z;
     points[1].u = sizex<<16;
     points[1].v = 0;
-    points[1].c = (itofix(192)+63*fsin(2*frame))>>16;
+    points[1].c = (itofix(192)+63*fixsin(2*frame))>>16;
 
     points[2].x = itofix(320);
     points[2].y = itofix(200);
-    points[2].x = (s*fcos(angle+itofix(128)))+itofix(128);
-    points[2].y = (s*fsin(angle+itofix(128)))+itofix(64);
+    points[2].x = (s*fixcos(angle+itofix(128)))+itofix(128);
+    points[2].y = (s*fixsin(angle+itofix(128)))+itofix(64);
     points[2].z = z;
     points[2].u = sizex<<16;
     points[2].v = sizey<<16;
-    points[2].c = (itofix(127)+127*fsin(3*frame))>>16;;;
+    points[2].c = (itofix(127)+127*fixsin(3*frame))>>16;;;
 
     points[3].x = itofix(0);
     points[3].y = itofix(200);
-    points[3].x = (s*fcos(angle+itofix(192)))+itofix(128);
-    points[3].y = (s*fsin(angle+itofix(192)))+itofix(64);
+    points[3].x = (s*fixcos(angle+itofix(192)))+itofix(128);
+    points[3].y = (s*fixsin(angle+itofix(192)))+itofix(64);
     points[3].z = z;
     points[3].u = 0;
     points[3].v = sizey<<16;
-    points[3].c = (itofix(192)+63*fsin(frame/3))>>16;
+    points[3].c = (itofix(192)+63*fixsin(frame/3))>>16;
 
     quad3d(buffer, POLYTYPE_ATEX_LIT, back, &points[0], &points[1], &points[2], &points[3]);
 }
@@ -588,19 +588,19 @@ void DrawPlasma16(BITMAP * buffer, BITMAP * image, int frame, int amplitude, int
         for (i = 0;i < 320;i++)
             sinus[i] = fixtoi(
                            itofix(64)+
-                           ((amplitude*fsin(itofix((i+frame/1)&255))
-                             +amplitude*fcos(itofix((frame/7)&255))
-                             +amplitude*fsin(itofix((frame/2-i)&255))
-                             +amplitude*fcos(itofix((frame/4+i/3)&255))
+                           ((amplitude*fixsin(itofix((i+frame/1)&255))
+                             +amplitude*fixcos(itofix((frame/7)&255))
+                             +amplitude*fixsin(itofix((frame/2-i)&255))
+                             +amplitude*fixcos(itofix((frame/4+i/3)&255))
                             )/16))*450*2;
 
         for (i = 0;i < 200;i++)
             sinus[i+320] = 2*fixtoi(
                                itofix(64)+
-                               ((amplitude*fsin(itofix((i+frame/9)&255))
-                                 +amplitude*fcos(itofix((frame/3)&255))
-                                 +amplitude*fsin(itofix((frame+i)&255))
-                                 +amplitude*fcos(itofix((frame*2+i/7)&255))
+                               ((amplitude*fixsin(itofix((i+frame/9)&255))
+                                 +amplitude*fixcos(itofix((frame/3)&255))
+                                 +amplitude*fixsin(itofix((frame+i)&255))
+                                 +amplitude*fixcos(itofix((frame*2+i/7)&255))
                                 )/16));
     }
     else
@@ -608,19 +608,19 @@ void DrawPlasma16(BITMAP * buffer, BITMAP * image, int frame, int amplitude, int
         for (i = 0;i < 320;i++)
             sinus[i] = 2*fixtoi(
                            itofix(64)+
-                           ((amplitude*fsin(itofix((i+frame/1)&255))
-                             +amplitude*fcos(itofix((frame/4)&255))
-                             +amplitude*fsin(itofix((frame/2-i)&255))
-                             +amplitude*fcos(itofix((frame/4+i/3)&255))
+                           ((amplitude*fixsin(itofix((i+frame/1)&255))
+                             +amplitude*fixcos(itofix((frame/4)&255))
+                             +amplitude*fixsin(itofix((frame/2-i)&255))
+                             +amplitude*fixcos(itofix((frame/4+i/3)&255))
                             )/16));
 
         for (i = 0;i < 200;i++)
             sinus[i+320] = fixtoi(
                                itofix(64)+
-                               ((amplitude*fsin(itofix((i+frame/9)&255))
-                                 +amplitude*fcos(itofix((frame/3)&255))
-                                 +amplitude*fsin(itofix((frame+i)&255))
-                                 +amplitude*fcos(itofix((frame*3+i/7)&255))
+                               ((amplitude*fixsin(itofix((i+frame/9)&255))
+                                 +amplitude*fixcos(itofix((frame/3)&255))
+                                 +amplitude*fixsin(itofix((frame+i)&255))
+                                 +amplitude*fixcos(itofix((frame*3+i/7)&255))
                                 )/16))*450*2;
     }
 
@@ -680,29 +680,29 @@ void DrawPlasma(BITMAP * buffer, BITMAP * image, int frame, int amplitude, int d
         for (i = 0;i < 320;i++)
             sinus[i] = fixtoi(
                            itofix(64)+
-                           ((amplitude*fsin(itofix((i+frame/1)&255))
-                             +amplitude*fcos(itofix((frame/7)&255))
-                             +amplitude*fsin(itofix((frame/2-i)&255))
-                             +amplitude*fcos(itofix((frame/4+i/3)&255))
+                           ((amplitude*fixsin(itofix((i+frame/1)&255))
+                             +amplitude*fixcos(itofix((frame/7)&255))
+                             +amplitude*fixsin(itofix((frame/2-i)&255))
+                             +amplitude*fixcos(itofix((frame/4+i/3)&255))
                             )/16))*450;
 
         for (i = 0;i < 200;i++)
             sinus[i+320] = fixtoi(
                                itofix(64)+
-                               ((amplitude*fsin(itofix((i+frame/9)&255))
-                                 +amplitude*fcos(itofix((frame/3)&255))
-                                 +amplitude*fsin(itofix((frame+i)&255))
-                                 +amplitude*fcos(itofix((frame*2+i/7)&255))
+                               ((amplitude*fixsin(itofix((i+frame/9)&255))
+                                 +amplitude*fixcos(itofix((frame/3)&255))
+                                 +amplitude*fixsin(itofix((frame+i)&255))
+                                 +amplitude*fixcos(itofix((frame*2+i/7)&255))
                                 )/16));
 
         for (i = 0;i < 320;i++)
             sinus[i] = fixtoi(itofix(64)+amplitude*
-                              (fsin(itofix((frame*7)&255))+fcos(itofix((i-frame/2)&255)))
+                              (fixsin(itofix((frame*7)&255))+fixcos(itofix((i-frame/2)&255)))
                               /8)*450;
 
         for (i = 0;i < 200;i++)
             sinus[i+320] = fixtoi(itofix(64)+amplitude*
-                                  (fcos(itofix((frame*3)&255))+fcos(itofix((i+frame)&255)))
+                                  (fixcos(itofix((frame*3)&255))+fixcos(itofix((i+frame)&255)))
                                   /8);
     }
     else
@@ -710,19 +710,19 @@ void DrawPlasma(BITMAP * buffer, BITMAP * image, int frame, int amplitude, int d
         for (i = 0;i < 320;i++)
             sinus[i] = fixtoi(
                            itofix(64)+
-                           ((amplitude*fsin(itofix((i+frame/1)&255))
-                             +amplitude*fcos(itofix((frame/4)&255))
-                             +amplitude*fsin(itofix((frame/2-i)&255))
-                             +amplitude*fcos(itofix((frame/4+i/3)&255))
+                           ((amplitude*fixsin(itofix((i+frame/1)&255))
+                             +amplitude*fixcos(itofix((frame/4)&255))
+                             +amplitude*fixsin(itofix((frame/2-i)&255))
+                             +amplitude*fixcos(itofix((frame/4+i/3)&255))
                             )/16));
 
         for (i = 0;i < 200;i++)
             sinus[i+320] = fixtoi(
                                itofix(64)+
-                               ((amplitude*fsin(itofix((i+frame/9)&255))
-                                 +amplitude*fcos(itofix((frame/3)&255))
-                                 +amplitude*fsin(itofix((frame+i)&255))
-                                 +amplitude*fcos(itofix((frame*3+i/7)&255))
+                               ((amplitude*fixsin(itofix((i+frame/9)&255))
+                                 +amplitude*fixcos(itofix((frame/3)&255))
+                                 +amplitude*fixsin(itofix((frame+i)&255))
+                                 +amplitude*fixcos(itofix((frame*3+i/7)&255))
                                 )/16))*450;
     }
 

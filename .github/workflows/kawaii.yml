@@ -1,0 +1,20 @@
+name: Build kawaii
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kawaii
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake libtool libsdl1.2-dev libgl-dev libglu-dev libx11-dev
+      - name: Configure
+        run: chmod +x autogen.sh && ./autogen.sh && CFLAGS="-fcommon" ./configure
+      - name: Build
+        run: make
